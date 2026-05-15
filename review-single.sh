@@ -31,5 +31,16 @@ claude -p "$(sed "s/__PR_NUMBER__/${PR}/g" "${REVIEW_PROMPT}")" \
     --allowedTools "Bash,Read,Write" \
     --add-dir "${REPO_DIR}"
 
+# Git: commit, pull, push (skip if called from cron)
+if [ -z "${CRON_MODE:-}" ]; then
+    echo ""
+    echo "[Git] Committing and pushing review outputs..."
+    cd "${SCRIPT_DIR}"
+    git add -A
+    git commit -m "Review PR #${PR}" || echo "Nothing to commit"
+    git pull --rebase origin main
+    git push origin main
+fi
+
 echo ""
 echo "=== Done ==="
