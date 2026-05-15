@@ -121,7 +121,7 @@ function esc(str) {
 const FILTER_KEYS = [
   'search', 'status', 'author', 'insider', 'draft', 'mergeable',
   'review_decision', 'has_review', 'has_findings', 'ci_status',
-  'merge_state', 'label', 'sort', 'order',
+  'merge_state', 'label', 'include_merged', 'sort', 'order',
 ];
 
 const FILTER_LABELS = {
@@ -136,6 +136,7 @@ const FILTER_LABELS = {
   has_findings: v => v === '1' ? 'Has findings' : 'No findings',
   ci_status: v => `CI: ${v}`,
   merge_state: 'Merge state',
+  include_merged: v => v === '1' ? 'Including merged' : '',
   label: 'Label',
   sort: 'Sort',
   order: 'Order',
@@ -317,6 +318,7 @@ function renderStats(s) {
     <div class="stat-card yellow"><div class="stat-value">${s.changes_requested || 0}</div><div class="stat-label">Changes Req'd</div></div>
     <div class="stat-card green"><div class="stat-value">${s.clean || 0}</div><div class="stat-label">Clean</div></div>
     <div class="stat-card red"><div class="stat-value">${s.blocked || 0}</div><div class="stat-label">Blocked</div></div>
+    <div class="stat-card purple"><div class="stat-value">${s.merged || 0}</div><div class="stat-label">Merged</div></div>
   `;
 
   // Make stat cards clickable as quick filters
@@ -329,6 +331,7 @@ function renderStats(s) {
       "changes req'd": 'changes-requested',
       'clean': 'clean',
       'blocked': 'blocked',
+      'merged': '__merged',
     };
     const filterVal = statusMap[label];
     if (filterVal && label !== 'total prs') {
@@ -337,6 +340,9 @@ function renderStats(s) {
         if (filterVal === '__draft') {
           setFiltersToUrl({ draft: '1' });
           setFormFromFilters({ draft: '1' });
+        } else if (filterVal === '__merged') {
+          setFiltersToUrl({ status: 'merged', include_merged: '1' });
+          setFormFromFilters({ status: 'merged', include_merged: '1' });
         } else {
           setFiltersToUrl({ status: filterVal });
           setFormFromFilters({ status: filterVal });

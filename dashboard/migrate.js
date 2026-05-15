@@ -5,6 +5,7 @@ const { scanTrackingDir, scanLogsDir } = require('./parser');
 const BASE_DIR = path.resolve(__dirname, '..');
 const TRACKING_DIR = path.join(BASE_DIR, 'tinyhumansai-openhuman');
 const APPROVED_DIR = path.join(BASE_DIR, 'to-be-approved');
+const MERGED_DIR = path.join(BASE_DIR, 'already-merged');
 const LOGS_DIR = path.join(BASE_DIR, 'logs');
 
 function migrate() {
@@ -13,7 +14,8 @@ function migrate() {
   // Parse all tracking files
   const trackingPrs = scanTrackingDir(TRACKING_DIR, 'tinyhumansai-openhuman');
   const approvedPrs = scanTrackingDir(APPROVED_DIR, 'to-be-approved');
-  const allPrs = [...trackingPrs, ...approvedPrs];
+  const mergedPrs = scanTrackingDir(MERGED_DIR, 'already-merged');
+  const allPrs = [...trackingPrs, ...approvedPrs, ...mergedPrs];
 
   console.log(`[migrate] Found ${allPrs.length} PR tracking files`);
 

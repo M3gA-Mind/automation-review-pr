@@ -126,7 +126,8 @@ const prQueries = {
     SUM(CASE WHEN p.status = 'clean' THEN 1 ELSE 0 END) as clean,
     SUM(CASE WHEN p.status = 'blocked' THEN 1 ELSE 0 END) as blocked,
     SUM(CASE WHEN p.status = 'pending' THEN 1 ELSE 0 END) as pending,
-    SUM(CASE WHEN g.is_open = 0 THEN 1 ELSE 0 END) as closed
+    SUM(CASE WHEN p.status = 'merged' THEN 1 ELSE 0 END) as merged,
+    SUM(CASE WHEN p.status = 'closed' THEN 1 ELSE 0 END) as closed
     FROM prs p
     LEFT JOIN pr_github g ON g.pr_id = p.id`,
 };
@@ -292,6 +293,11 @@ function queryPrs(filters = {}) {
   const db = getDb();
   const conditions = [];
   const params = [];
+
+  // --- Exclude merged/closed by default ---
+  if (!filters.include_merged) {
+    conditions.push("p.status NOT IN ('merged', 'closed')");
+  }
 
   // --- Status ---
   if (filters.status) {
@@ -504,6 +510,21 @@ function getFilterOptions() {
   return { authors, statuses, labels: uniqueLabels, mergeStates };
 }
 
+function updatePrStatus(id, status) {
+  const db = getDb();
+  db.prepare("UPDATE prs SET status = ?, updated_at = datetime('now') WHERE id = ?").run(status, id);
+}
+
+function updatePrTrackingPath(id, newPath, location) {
+  const db = getDb();
+  db.prepare("UPDATE prs SET tracking_file_path = ?, location = ?, updated_at = datetime('now') WHERE id = ?").run(newPath, location, id);
+}
+
+function markPrNotOpen(id) {
+  const db = getDb();
+  db.prepare('UPDATE pr_github SET is_open = 0 WHERE pr_id = ?').run(id);
+}
+
 function markClosedPrs(openPrIds) {
   const db = getDb();
   if (openPrIds.length === 0) return;
@@ -533,6 +554,9 @@ module.exports = {
   getPrsWithLatestCycle,
   queryPrs,
   getFilterOptions,
+  updatePrStatus,
+  updatePrTrackingPath,
+  markPrNotOpen,
   markClosedPrs,
   close,
 };

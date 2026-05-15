@@ -45,6 +45,7 @@ router.get('/prs', (req, res) => {
     created_after: req.query.created_after || undefined,
     created_before: req.query.created_before || undefined,
     ci_status: req.query.ci_status || undefined,
+    include_merged: req.query.include_merged === '1' || undefined,
     sort: req.query.sort || undefined,
     order: req.query.order || undefined,
   };

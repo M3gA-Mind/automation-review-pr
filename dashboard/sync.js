@@ -6,6 +6,7 @@ const { parseTrackingFile, parseCronLog } = require('./parser');
 const BASE_DIR = path.resolve(__dirname, '..');
 const TRACKING_DIR = path.join(BASE_DIR, 'tinyhumansai-openhuman');
 const APPROVED_DIR = path.join(BASE_DIR, 'to-be-approved');
+const MERGED_DIR = path.join(BASE_DIR, 'already-merged');
 const LOGS_DIR = path.join(BASE_DIR, 'logs');
 const STATUS_FILE = path.join(BASE_DIR, 'status.json');
 
@@ -116,8 +117,9 @@ function startWatching() {
   console.log('[sync] Starting file watchers...');
   watchers.push(watchDir(TRACKING_DIR, 'tinyhumansai-openhuman'));
   watchers.push(watchDir(APPROVED_DIR, 'to-be-approved'));
+  watchers.push(watchDir(MERGED_DIR, 'already-merged'));
   watchers.push(watchStatusFile());
-  console.log('[sync] Watching: tinyhumansai-openhuman/, to-be-approved/, status.json');
+  console.log('[sync] Watching: tinyhumansai-openhuman/, to-be-approved/, already-merged/, status.json');
 }
 
 function stopWatching() {

@@ -1,7 +1,11 @@
 const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 const db = require('./db');
 
 const REPO = 'tinyhumansai/openhuman';
+const BASE_DIR = path.resolve(__dirname, '..');
+const MERGED_DIR = path.join(BASE_DIR, 'already-merged');
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 let _orgMembers = null;
@@ -48,6 +52,52 @@ function isInsider(login) {
   if (!login) return null;
   const members = fetchOrgMembers();
   return members.has(login.toLowerCase()) ? 1 : 0;
+}
+
+/**
+ * Handle a PR that has been merged.
+ * 1. Update status to 'merged'
+ * 2. Set is_open = 0
+ * 3. Move tracking file to already-merged/
+ */
+function handlePrMerged(prId) {
+  db.updatePrStatus(prId, 'merged');
+  db.markPrNotOpen(prId);
+  moveTrackingFile(prId);
+  console.log(`[github-sync]   PR #${prId}: merged — archived`);
+}
+
+/**
+ * Handle a PR that has been closed (not merged).
+ */
+function handlePrClosed(prId) {
+  db.updatePrStatus(prId, 'closed');
+  db.markPrNotOpen(prId);
+  moveTrackingFile(prId);
+  console.log(`[github-sync]   PR #${prId}: closed — archived`);
+}
+
+/**
+ * Move a PR's tracking file to already-merged/ directory.
+ */
+function moveTrackingFile(prId) {
+  const pr = db.getPrById(prId);
+  if (!pr || !pr.tracking_file_path) return;
+  if (!fs.existsSync(pr.tracking_file_path)) return;
+
+  // Already in the right place
+  if (pr.tracking_file_path.includes('already-merged')) return;
+
+  fs.mkdirSync(MERGED_DIR, { recursive: true });
+  const filename = path.basename(pr.tracking_file_path);
+  const newPath = path.join(MERGED_DIR, filename);
+
+  try {
+    fs.renameSync(pr.tracking_file_path, newPath);
+    db.updatePrTrackingPath(prId, newPath, 'already-merged');
+  } catch (err) {
+    console.error(`[github-sync]   Failed to move ${filename}: ${err.message}`);
+  }
 }
 
 function fetchAllOpenPrs() {
@@ -174,24 +224,21 @@ function fetchAllOpenPrs() {
   // Find PRs that were open before but are no longer in the open list
   const openIds = new Set(prs.map(p => p.number));
   const previouslyOpen = db.getAllPrs().filter(p => {
-    // PR is in our DB but not in the open list anymore
     return !openIds.has(p.id) && p.status !== 'merged' && p.status !== 'closed';
   });
 
-  // Fetch actual state for closed/merged PRs
+  // Detect merged/closed PRs and handle them
   for (const pr of previouslyOpen) {
     try {
       const out = execSync(
-        `gh pr view ${pr.id} --repo ${REPO} --json state,mergedAt,mergedBy,closedAt`,
+        `gh pr view ${pr.id} --repo ${REPO} --json state`,
         { encoding: 'utf-8', timeout: 10000, stdio: ['pipe', 'pipe', 'pipe'] }
       );
       const info = JSON.parse(out);
       if (info.state === 'MERGED') {
-        db.upsertPr({ ...pr, status: 'merged' });
-        console.log(`[github-sync]   PR #${pr.id}: marked as merged`);
+        handlePrMerged(pr.id);
       } else if (info.state === 'CLOSED') {
-        db.upsertPr({ ...pr, status: 'closed' });
-        console.log(`[github-sync]   PR #${pr.id}: marked as closed`);
+        handlePrClosed(pr.id);
       }
     } catch {
       // Can't fetch — skip
@@ -228,6 +275,8 @@ module.exports = {
   fetchAllOpenPrs,
   fetchOrgMembers,
   isInsider,
+  handlePrMerged,
+  handlePrClosed,
   startPeriodicSync,
   stopPeriodicSync,
 };
