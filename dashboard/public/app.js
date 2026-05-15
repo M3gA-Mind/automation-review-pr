@@ -476,15 +476,13 @@ async function cancelReview(prId) {
   try {
     const res = await fetch(`${API}/api/trigger/cancel/review-${prId}`, { method: 'POST' });
     const data = await res.json();
-    if (res.ok) {
-      btn.textContent = 'Cancelled';
-      // Refresh after a beat
+    if (res.ok || data.error === 'Job already finished') {
+      btn.textContent = res.ok ? 'Cancelled' : 'Done';
       setTimeout(() => {
         if (typeof fetchAndRender === 'function') fetchAndRender();
-        // If on detail page, refresh it
         const container = document.getElementById('pr-detail');
         if (container) location.reload();
-      }, 1000);
+      }, 500);
     } else {
       alert(data.error || 'Failed to cancel');
       btn.disabled = false;
