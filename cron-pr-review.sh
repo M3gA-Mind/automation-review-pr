@@ -11,6 +11,7 @@ LOG_DIR="${SCRIPT_DIR}/logs"
 DISCOVER_PROMPT="${SCRIPT_DIR}/discover-prompt.md"
 TIMESTAMP=$(date +"%Y-%m-%d-%H%M")
 LOG_FILE="${LOG_DIR}/review-${TIMESTAMP}.log"
+CRON_START=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Ensure PATH includes required tools (cron has minimal PATH)
 export PATH="/Users/cyrus/.nvm/versions/node/v22.22.1/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
@@ -112,6 +113,10 @@ log "Git: Pushed to origin/main"
 
 # Cleanup old logs (keep last 7 days)
 find "${LOG_DIR}" -name "*.log" -mtime +7 -delete 2>/dev/null || true
+
+CRON_END=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+REVIEWED=$((${#PRS[@]} - FAILED))
+log "CRON_META: started=${CRON_START} ended=${CRON_END} discovered=${#PRS[@]} reviewed=${REVIEWED} failed=${FAILED}"
 
 log ""
 log "=== Done — $(date +"%Y-%m-%d %H:%M:%S") ==="

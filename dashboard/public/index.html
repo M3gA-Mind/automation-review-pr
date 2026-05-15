@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PR Review Dashboard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>PR Review Dashboard <span>tinyhumansai/openhuman</span></h1>
+      <div class="header-actions">
+        <button class="btn btn-sm" onclick="forceSync()">Sync</button>
+        <button class="btn btn-sm btn-primary" id="btn-discover" onclick="triggerDiscover()">Discover & Review</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="stats-bar" class="stats-bar">
+      <div class="stat-card"><div class="stat-value">-</div><div class="stat-label">Loading...</div></div>
+    </div>
+
+    <div class="filters">
+      <input type="text" id="filter-search" placeholder="Search by PR #, title, or author...">
+      <select id="filter-status">
+        <option value="">All statuses</option>
+        <option value="pending">Pending Review</option>
+        <option value="clean">Clean</option>
+        <option value="changes-requested">Changes Requested</option>
+        <option value="under-review">Under Review</option>
+        <option value="blocked">Blocked</option>
+        <option value="draft">Drafts</option>
+        <option value="skipped">Skipped</option>
+      </select>
+    </div>
+
+    <div class="pr-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>PR #</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Insider</th>
+            <th>Status</th>
+            <th>State</th>
+            <th>Diff</th>
+            <th>Cycles</th>
+            <th>Last Activity</th>
+            <th>Duration</th>
+            <th>Findings</th>
+            <th>Merge</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="pr-table-body">
+          <tr><td colspan="13" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

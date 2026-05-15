@@ -1,0 +1,191 @@
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const { marked } = require('marked');
+const db = require('../db');
+const sync = require('../sync');
+const githubSync = require('../github-sync');
+const { scanTrackingDir, scanLogsDir } = require('../parser');
+
+const router = express.Router();
+
+const BASE_DIR = path.resolve(__dirname, '../..');
+const TRACKING_DIR = path.join(BASE_DIR, 'tinyhumansai-openhuman');
+const APPROVED_DIR = path.join(BASE_DIR, 'to-be-approved');
+const LOGS_DIR = path.join(BASE_DIR, 'logs');
+
+// GET /api/stats
+router.get('/stats', (req, res) => {
+  const stats = db.getStats();
+  const liveStatus = sync.getLiveStatus();
+  res.json({ ...stats, liveStatus });
+});
+
+// GET /api/prs
+router.get('/prs', (req, res) => {
+  const prs = db.getPrsWithLatestCycle();
+  const liveStatus = sync.getLiveStatus();
+
+  const enriched = prs.map(pr => ({
+    ...pr,
+    is_running: liveStatus && liveStatus.running && liveStatus.pr === pr.id,
+    running_phase: liveStatus && liveStatus.running && liveStatus.pr === pr.id ? liveStatus.phase : null,
+  }));
+
+  res.json(enriched);
+});
+
+// GET /api/prs/:id
+router.get('/prs/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const pr = db.getPrByIdFull(id);
+  if (!pr) return res.status(404).json({ error: 'PR not found' });
+
+  const cycles = db.getCyclesByPr(id);
+  const liveStatus = sync.getLiveStatus();
+
+  res.json({
+    ...pr,
+    cycles,
+    is_running: liveStatus && liveStatus.running && liveStatus.pr === id,
+    running_phase: liveStatus && liveStatus.running && liveStatus.pr === id ? liveStatus.phase : null,
+  });
+});
+
+// GET /api/prs/:id/tracking — raw markdown
+router.get('/prs/:id/tracking', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const pr = db.getPrById(id);
+  if (!pr) return res.status(404).json({ error: 'PR not found' });
+
+  const filePath = pr.tracking_file_path;
+  if (!filePath || !fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Tracking file not found' });
+  }
+
+  const content = fs.readFileSync(filePath, 'utf-8');
+  res.type('text/plain').send(content);
+});
+
+// GET /api/prs/:id/tracking/html — rendered markdown
+router.get('/prs/:id/tracking/html', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const pr = db.getPrById(id);
+  if (!pr) return res.status(404).json({ error: 'PR not found' });
+
+  const filePath = pr.tracking_file_path;
+  if (!filePath || !fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Tracking file not found' });
+  }
+
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const html = marked(content);
+  res.type('text/html').send(html);
+});
+
+// GET /api/prs/:id/log/:cycle — raw log for a review cycle
+router.get('/prs/:id/log/:cycle', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const cycleNum = parseInt(req.params.cycle, 10);
+
+  const cycles = db.getCyclesByPr(id);
+  const cycle = cycles.find(c => c.cycle_number === cycleNum);
+
+  if (!cycle || !cycle.log_file_path || !fs.existsSync(cycle.log_file_path)) {
+    // Try to find a matching log file by PR number
+    const logPattern = new RegExp(`review-PR-${id}.*\\.log$`);
+    const logFiles = fs.existsSync(LOGS_DIR)
+      ? fs.readdirSync(LOGS_DIR).filter(f => logPattern.test(f)).sort()
+      : [];
+
+    if (logFiles.length > 0 && logFiles[cycleNum - 1]) {
+      const content = fs.readFileSync(path.join(LOGS_DIR, logFiles[cycleNum - 1]), 'utf-8');
+      return res.type('text/plain').send(content);
+    }
+
+    return res.status(404).json({ error: 'Log not found' });
+  }
+
+  const content = fs.readFileSync(cycle.log_file_path, 'utf-8');
+  res.type('text/plain').send(content);
+});
+
+// GET /api/prs/:id/logs — list all log files for a PR
+router.get('/prs/:id/logs', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+
+  const logPattern = new RegExp(`review-PR-${id}.*\\.log$`);
+  const logFiles = fs.existsSync(LOGS_DIR)
+    ? fs.readdirSync(LOGS_DIR).filter(f => logPattern.test(f)).sort()
+    : [];
+
+  const logs = logFiles.map(f => ({
+    filename: f,
+    path: path.join(LOGS_DIR, f),
+    size: fs.statSync(path.join(LOGS_DIR, f)).size,
+  }));
+
+  res.json(logs);
+});
+
+// GET /api/cron-runs
+router.get('/cron-runs', (req, res) => {
+  const runs = db.getAllCronRuns();
+  res.json(runs);
+});
+
+// GET /api/status — live review status
+router.get('/status', (req, res) => {
+  const liveStatus = sync.getLiveStatus();
+  res.json(liveStatus || { running: false });
+});
+
+// POST /api/sync — force re-sync from files
+router.post('/sync', (req, res) => {
+  try {
+    const trackingPrs = scanTrackingDir(TRACKING_DIR, 'tinyhumansai-openhuman');
+    const approvedPrs = scanTrackingDir(APPROVED_DIR, 'to-be-approved');
+    const allPrs = [...trackingPrs, ...approvedPrs];
+
+    for (const { pr, cycles } of allPrs) {
+      if (!pr.id) continue;
+      db.upsertPr({
+        id: pr.id,
+        title: pr.title,
+        author: pr.author,
+        branch: pr.branch,
+        base_branch: pr.base_branch,
+        url: pr.url,
+        created_at: pr.created_at,
+        status: pr.status,
+        is_insider: null,
+        last_reviewed_commit: pr.last_reviewed_commit,
+        last_review_date: pr.last_review_date,
+        tracking_file_path: pr.tracking_file_path,
+        location: pr.location,
+      });
+      if (cycles.length > 0) {
+        db.replaceCyclesForPr(pr.id, cycles);
+      }
+    }
+
+    // Also refresh from GitHub
+    githubSync.fetchAllOpenPrs();
+
+    res.json({ synced: allPrs.length, github: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/github-sync — force GitHub re-fetch
+router.post('/github-sync', (req, res) => {
+  try {
+    githubSync.fetchAllOpenPrs();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
