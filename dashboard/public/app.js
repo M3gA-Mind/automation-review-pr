@@ -77,9 +77,9 @@ function waitingFor(pr) {
   return '-';
 }
 
-function insiderBadge(isInsider) {
-  if (isInsider === 1) return '<span class="badge badge-insider">insider</span>';
-  if (isInsider === 0) return '<span class="badge badge-outsider">outsider</span>';
+function memberBadge(isMember) {
+  if (isMember === 1) return '<span class="badge badge-member">member</span>';
+  if (isMember === 0) return '<span class="badge badge-collaborator">collaborator</span>';
   return '<span class="badge badge-gray">?</span>';
 }
 
@@ -119,7 +119,7 @@ function esc(str) {
 // =============================================================
 
 const FILTER_KEYS = [
-  'search', 'status', 'author', 'insider', 'draft', 'mergeable',
+  'search', 'status', 'author', 'member', 'draft', 'mergeable',
   'review_decision', 'has_review', 'has_findings', 'ci_status',
   'merge_state', 'label', 'include_merged', 'sort', 'order',
 ];
@@ -128,7 +128,7 @@ const FILTER_LABELS = {
   search: 'Search',
   status: 'Status',
   author: 'Author',
-  insider: v => v === '1' ? 'Insider' : 'Outsider',
+  member: v => v === '1' ? 'Member' : 'Collaborator',
   draft: v => v === '1' ? 'Drafts' : 'Ready',
   mergeable: 'Merge',
   review_decision: 'GH Decision',
@@ -369,7 +369,7 @@ function renderTable(prs) {
       <td class="pr-number"><a href="/pr.html?pr=${pr.id}">#${pr.id}</a></td>
       <td class="pr-title" title="${esc(pr.title)}">${esc(pr.title) || '-'}${pr.gh_is_draft ? ' <span class="badge badge-purple" style="font-size:10px">draft</span>' : ''}</td>
       <td><a href="javascript:void(0)" onclick="applyFilter('author','${esc(pr.author)}')">${esc(pr.author) || '-'}</a></td>
-      <td>${insiderBadge(pr.is_insider)}</td>
+      <td>${memberBadge(pr.is_member)}</td>
       <td>${statusBadge(pr.status)}</td>
       <td>${waitingFor(pr)}</td>
       <td>${diffStat(pr.additions, pr.deletions, pr.changed_files)}</td>
@@ -387,12 +387,9 @@ function renderTable(prs) {
       <td>${ciBadge(pr)}</td>
       <td>${mergeableBadge(pr.mergeable)}</td>
       <td>
-        <div style="display:flex;gap:4px">
           <button class="btn btn-sm btn-primary" onclick="triggerReview(${pr.id})" ${pr.is_running ? 'disabled' : ''}>
             ${pr.latest_cycle ? 'Re-review' : 'Review'}
           </button>
-          <a href="/pr.html?pr=${pr.id}" class="btn btn-sm">Details</a>
-        </div>
       </td>
     </tr>
   `).join('');
@@ -683,7 +680,7 @@ function renderPrDetail(pr, container) {
     <div class="pr-header">
       <h2>#${pr.id} ${esc(pr.title) || 'Untitled'} ${isDraft ? '<span class="badge badge-purple">draft</span>' : ''}</h2>
       <div class="pr-meta">
-        <div><strong>Author:</strong> ${esc(pr.author) || '-'} ${insiderBadge(pr.is_insider)}</div>
+        <div><strong>Author:</strong> ${esc(pr.author) || '-'} ${memberBadge(pr.is_member)}</div>
         <div><strong>Branch:</strong> ${esc(pr.branch)} -> ${esc(pr.base_branch)}</div>
         <div><strong>Created:</strong> ${pr.created_at ? new Date(pr.created_at).toLocaleString() : '-'}</div>
         <div><strong>Updated:</strong> ${pr.updated_at_gh ? timeAgo(pr.updated_at_gh) : '-'}</div>
