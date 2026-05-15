@@ -387,9 +387,12 @@ function renderTable(prs) {
       <td>${ciBadge(pr)}</td>
       <td>${mergeableBadge(pr.mergeable)}</td>
       <td>
-          <button class="btn btn-sm btn-primary" onclick="triggerReview(${pr.id})" ${pr.is_running ? 'disabled' : ''}>
-            ${pr.latest_cycle ? 'Re-review' : 'Review'}
-          </button>
+          ${pr.is_running
+            ? `<button class="btn btn-sm btn-danger" onclick="cancelReview(${pr.id})">Cancel</button>`
+            : `<button class="btn btn-sm btn-primary" onclick="triggerReview(${pr.id})">
+                ${pr.latest_cycle ? 'Re-review' : 'Review'}
+              </button>`
+          }
       </td>
     </tr>
   `).join('');
@@ -464,6 +467,35 @@ async function loadDashboard() {
 // =============================================================
 // Actions
 // =============================================================
+
+async function cancelReview(prId) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Cancelling...';
+
+  try {
+    const res = await fetch(`${API}/api/trigger/cancel/review-${prId}`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      btn.textContent = 'Cancelled';
+      // Refresh after a beat
+      setTimeout(() => {
+        if (typeof fetchAndRender === 'function') fetchAndRender();
+        // If on detail page, refresh it
+        const container = document.getElementById('pr-detail');
+        if (container) location.reload();
+      }, 1000);
+    } else {
+      alert(data.error || 'Failed to cancel');
+      btn.disabled = false;
+      btn.textContent = 'Cancel';
+    }
+  } catch (err) {
+    alert('Failed: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Cancel';
+  }
+}
 
 async function triggerReview(prId, redirectToDetail) {
   const btn = event.target;
@@ -735,10 +767,13 @@ function renderPrDetail(pr, container) {
       </div>
 
       <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
-        <button class="btn btn-primary" onclick="triggerReview(${pr.id}, false)" ${pr.is_running ? 'disabled' : ''}>
-          ${(pr.cycles || []).length > 0 ? 'Trigger Re-review' : 'Trigger Review'}
-        </button>
-        ${pr.is_running ? `<span class="running-indicator"><span class="running-dot"></span>Running Phase ${pr.running_phase || '?'}...</span>` : ''}
+        ${pr.is_running
+          ? `<button class="btn btn-danger" onclick="cancelReview(${pr.id})">Cancel Review</button>
+             <span class="running-indicator"><span class="running-dot"></span>Running Phase ${pr.running_phase || '?'}...</span>`
+          : `<button class="btn btn-primary" onclick="triggerReview(${pr.id}, false)">
+              ${(pr.cycles || []).length > 0 ? 'Trigger Re-review' : 'Trigger Review'}
+            </button>`
+        }
       </div>
     </div>
 

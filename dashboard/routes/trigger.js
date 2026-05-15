@@ -36,6 +36,7 @@ router.post('/review/:id', (req, res) => {
     cwd: BASE_DIR,
     env: { ...process.env, PATH: process.env.PATH, DASHBOARD_MODE: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
+    detached: true, // create process group so we can kill the whole tree
   });
 
   const job = {
@@ -47,6 +48,7 @@ router.post('/review/:id', (req, res) => {
     logLines: [],
     exitCode: null,
     done: false,
+    child, // keep reference for cancel
   };
   activeJobs.set(jobId, job);
 
@@ -119,6 +121,7 @@ router.post('/discover', (req, res) => {
     cwd: BASE_DIR,
     env: { ...process.env, PATH: process.env.PATH },
     stdio: ['ignore', 'pipe', 'pipe'],
+    detached: true,
   });
 
   const job = {
@@ -129,6 +132,7 @@ router.post('/discover', (req, res) => {
     logLines: [],
     exitCode: null,
     done: false,
+    child,
   };
   activeJobs.set('discover', job);
 
@@ -224,6 +228,44 @@ router.get('/log/:jobId', (req, res) => {
     after,
     lines,
   });
+});
+
+// POST /api/trigger/cancel/:jobId — kill a running job
+router.post('/cancel/:jobId', (req, res) => {
+  const jobId = req.params.jobId;
+  const job = activeJobs.get(jobId);
+
+  if (!job) {
+    return res.status(404).json({ error: 'Job not found' });
+  }
+
+  if (job.done) {
+    return res.status(400).json({ error: 'Job already finished' });
+  }
+
+  try {
+    // Kill the entire process group (bash + claude child processes)
+    process.kill(-job.pid, 'SIGTERM');
+  } catch {
+    try {
+      // Fallback: kill just the main process
+      process.kill(job.pid, 'SIGKILL');
+    } catch {
+      // Already dead
+    }
+  }
+
+  job.logLines.push('[cancelled] Review cancelled by user');
+  job.done = true;
+  job.exitCode = -1;
+  job.endedAt = new Date().toISOString();
+
+  console.log(`[trigger] Job ${jobId} cancelled by user`);
+
+  // Clean up after 1 min
+  setTimeout(() => activeJobs.delete(jobId), 60 * 1000);
+
+  res.json({ message: `Job ${jobId} cancelled`, jobId });
 });
 
 router.activeJobs = activeJobs;
