@@ -392,8 +392,15 @@ async function loadDashboard() {
   // Load filter options (authors, labels, etc.)
   await loadFilterOptions();
 
-  // Restore filters from URL
+  // Restore filters from URL, or apply defaults on first visit
   const urlFilters = getFiltersFromUrl();
+  const hasFilters = Object.keys(urlFilters).length > 0;
+  if (!hasFilters) {
+    // Default: Ready only + Mergeable
+    urlFilters.draft = '0';
+    urlFilters.mergeable = 'MERGEABLE';
+    setFiltersToUrl(urlFilters);
+  }
   setFormFromFilters(urlFilters);
 
   // Bind filter change events
