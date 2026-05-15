@@ -234,11 +234,19 @@ router.post('/cancel/:jobId', (req, res) => {
   const job = activeJobs.get(jobId);
 
   if (!job) {
-    return res.status(404).json({ error: 'Job not found' });
+    // No job in memory — clear stale status.json if it matches
+    const statusFile = path.join(BASE_DIR, 'status.json');
+    try {
+      const status = JSON.parse(fs.readFileSync(statusFile, 'utf-8'));
+      if (status.running) {
+        fs.writeFileSync(statusFile, JSON.stringify({ running: false }));
+      }
+    } catch {}
+    return res.json({ message: 'No active job — cleared stale state', jobId });
   }
 
   if (job.done) {
-    return res.status(400).json({ error: 'Job already finished' });
+    return res.json({ message: 'Job already finished', jobId });
   }
 
   // Kill the process tree: main pid + all children (claude, etc.)
