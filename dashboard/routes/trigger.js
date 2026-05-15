@@ -1,5 +1,5 @@
 const express = require('express');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -36,7 +36,6 @@ router.post('/review/:id', (req, res) => {
     cwd: BASE_DIR,
     env: { ...process.env, PATH: process.env.PATH, DASHBOARD_MODE: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
-    detached: true, // create process group so we can kill the whole tree
   });
 
   const job = {
@@ -121,7 +120,6 @@ router.post('/discover', (req, res) => {
     cwd: BASE_DIR,
     env: { ...process.env, PATH: process.env.PATH },
     stdio: ['ignore', 'pipe', 'pipe'],
-    detached: true,
   });
 
   const job = {
@@ -243,16 +241,15 @@ router.post('/cancel/:jobId', (req, res) => {
     return res.status(400).json({ error: 'Job already finished' });
   }
 
+  // Kill the process tree: main pid + all children (claude, etc.)
   try {
-    // Kill the entire process group (bash + claude child processes)
-    process.kill(-job.pid, 'SIGTERM');
+    // pkill -P kills all children of the process
+    execSync(`pkill -TERM -P ${job.pid} 2>/dev/null; kill -TERM ${job.pid} 2>/dev/null`, {
+      stdio: 'ignore',
+      timeout: 5000,
+    });
   } catch {
-    try {
-      // Fallback: kill just the main process
-      process.kill(job.pid, 'SIGKILL');
-    } catch {
-      // Already dead
-    }
+    // Process may already be dead
   }
 
   job.logLines.push('[cancelled] Review cancelled by user');
