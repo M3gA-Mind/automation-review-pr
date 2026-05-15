@@ -28,10 +28,12 @@ function formatDuration(seconds) {
 function statusBadge(status) {
   const map = {
     'clean': 'badge-green',
+    'merged': 'badge-purple',
+    'closed': 'badge-red',
     'changes-requested': 'badge-yellow',
     'blocked': 'badge-red',
     'under-review': 'badge-blue',
-    'pending': 'badge-purple',
+    'pending': 'badge-gray',
     'skipped': 'badge-gray',
   };
   return `<span class="badge ${map[status] || 'badge-gray'}">${status || 'pending'}</span>`;
@@ -64,6 +66,8 @@ function actionBadge(action) {
 }
 
 function waitingFor(pr) {
+  if (pr.status === 'merged') return '<span style="color:var(--purple)">Merged</span>';
+  if (pr.status === 'closed') return '<span style="color:var(--red)">Closed</span>';
   if (pr.is_running) return `<span class="running-indicator"><span class="running-dot"></span>Phase ${pr.running_phase || '?'}</span>`;
   if (pr.gh_is_draft) return '<span style="color:var(--text-muted)">Draft</span>';
   if (!pr.status || pr.status === 'pending') return '<span style="color:var(--purple)">Not reviewed</span>';

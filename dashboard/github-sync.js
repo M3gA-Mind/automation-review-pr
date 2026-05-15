@@ -171,10 +171,36 @@ function fetchAllOpenPrs() {
     });
   }
 
-  // Mark PRs no longer open (closed/merged since last sync)
+  // Find PRs that were open before but are no longer in the open list
+  const openIds = new Set(prs.map(p => p.number));
+  const previouslyOpen = db.getAllPrs().filter(p => {
+    // PR is in our DB but not in the open list anymore
+    return !openIds.has(p.id) && p.status !== 'merged' && p.status !== 'closed';
+  });
+
+  // Fetch actual state for closed/merged PRs
+  for (const pr of previouslyOpen) {
+    try {
+      const out = execSync(
+        `gh pr view ${pr.id} --repo ${REPO} --json state,mergedAt,mergedBy,closedAt`,
+        { encoding: 'utf-8', timeout: 10000, stdio: ['pipe', 'pipe', 'pipe'] }
+      );
+      const info = JSON.parse(out);
+      if (info.state === 'MERGED') {
+        db.upsertPr({ ...pr, status: 'merged' });
+        console.log(`[github-sync]   PR #${pr.id}: marked as merged`);
+      } else if (info.state === 'CLOSED') {
+        db.upsertPr({ ...pr, status: 'closed' });
+        console.log(`[github-sync]   PR #${pr.id}: marked as closed`);
+      }
+    } catch {
+      // Can't fetch — skip
+    }
+  }
+
   db.markClosedPrs(prs.map(p => p.number));
 
-  console.log(`[github-sync] Sync complete: ${prs.length} PRs upserted`);
+  console.log(`[github-sync] Sync complete: ${prs.length} open PRs + ${previouslyOpen.length} closed/merged checked`);
 }
 
 let _interval = null;
