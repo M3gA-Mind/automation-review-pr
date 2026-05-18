@@ -40,6 +40,7 @@ Each PR gets a markdown file with this structure:
 ### Review <n> — <ISO timestamp>
 **Type**: Fresh | Continuation
 **Commit**: <sha>
+**Summary**: <2-3 sentences summarizing what files changed, what the PR does, and key modifications>
 **Gates**: CI <pass/fail> | Conflicts <pass/fail> | Unresolved feedback <pass/fail>
 **Areas changed**: <Rust core, Frontend, Tauri shell, etc.>
 **CodeRabbit dedup**: <what was skipped>
@@ -283,7 +284,7 @@ EOF
 
 ### Step 12: Update tracking file
 
-After reviewing, create or update the tracking file at `/Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/PR-<N>.md` with all review details.
+After reviewing, create or update the tracking file at `/Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/PR-<N>.md` with all review details. Each review cycle must include a `**Summary**:` field covering what files changed, what the PR does, and the key modifications.
 
 Set status:
 - **If zero critical/major issues found** → status `clean`, **move file** to `/Users/cyrus/Desktop/automation/review-pr/to-be-approved/PR-<N>.md`

@@ -196,6 +196,7 @@ Write the tracking file to `/Users/cyrus/Desktop/automation/review-pr/tinyhumans
 ### Review <n> — <ISO timestamp>
 **Type**: Fresh | Continuation
 **Commit**: <sha>
+**Summary**: <2-3 sentences summarizing what files changed, what the PR does, and key modifications>
 **Gates**: CI pass | Conflicts pass | Unresolved feedback pass
 **Areas changed**: <Rust core, Frontend, Tauri shell, etc.>
 **Red flags**: <any red flags noted, or "None">

@@ -67,8 +67,8 @@
 
 ## PR Change Summary in Review Cycle
 
-- [ ] During each review cycle, generate a summarized description of the PR's changes
-- [ ] Store the summary in the `review_cycles` table (new `summary` column)
-- [ ] Also persist the summary in the tracking `.md` file under each review cycle entry
-- [ ] Display the summary on the PR detail page for each review cycle
-- [ ] Summary should cover: what files changed, what the PR does, key modifications
+- [x] During each review cycle, generate a summarized description of the PR's changes
+- [x] Store the summary in the `review_cycles` table (new `summary` column)
+- [x] Also persist the summary in the tracking `.md` file under each review cycle entry
+- [x] Display the summary on the PR detail page for each review cycle
+- [x] Summary should cover: what files changed, what the PR does, key modifications

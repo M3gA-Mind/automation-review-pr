@@ -92,6 +92,7 @@ function parseCycleBlock(block, cycleNumber, timestamp) {
     ended_at: timestamp,
     duration_seconds: null,
     commit_sha: extractField(block, 'Commit'),
+    summary: extractMarkdownField(block, 'Summary'),
     gates: extractField(block, 'Gates'),
     areas_changed: extractField(block, 'Areas changed'),
     findings_critical: 0,
@@ -120,6 +121,24 @@ function extractField(block, fieldName) {
   const pattern = new RegExp(`\\*\\*${escapeRegex(fieldName)}\\*\\*:\\s*(.+)`, 'i');
   const m = block.match(pattern);
   return m ? m[1].trim() : null;
+}
+
+function extractMarkdownField(block, fieldName) {
+  const pattern = new RegExp(`^\\*\\*${escapeRegex(fieldName)}\\*\\*:\\s*(.*)$`, 'im');
+  const m = block.match(pattern);
+  if (!m) return null;
+
+  const afterField = block.slice(m.index + m[0].length);
+  const nextField = afterField.search(/\n\*\*[^*\n]+?\*\*:/);
+  const continuation = nextField === -1 ? afterField : afterField.slice(0, nextField);
+  const value = [m[1], continuation]
+    .join('\n')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .join('\n');
+
+  return value || null;
 }
 
 function escapeRegex(str) {

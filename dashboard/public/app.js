@@ -689,6 +689,12 @@ function renderPrDetail(pr, container) {
         <div><strong>Gates:</strong> ${esc(c.gates) || '-'}</div>
         <div><strong>Areas:</strong> ${esc(c.areas_changed) || '-'}</div>
       </div>
+      ${c.summary ? `
+        <div class="cycle-summary">
+          <strong>Summary</strong>
+          <p>${esc(c.summary)}</p>
+        </div>
+      ` : ''}
       <div style="margin-top:12px">
         <div class="findings" style="margin-bottom:8px">
           <span class="f-crit">${c.findings_critical || 0} critical</span>
