@@ -120,21 +120,10 @@ function run() {
     } catch {}
   }
 
-  // Fetch org members
-  let orgMembers = [];
-  try {
-    const out = exec(`gh api orgs/tinyhumansai/members --jq '.[].login'`, 15000);
-    if (out) {
-      orgMembers = out.trim().split('\n').map(s => s.trim()).filter(Boolean);
-      console.log(`[worker] Fetched ${orgMembers.length} org members`);
-    }
-  } catch {}
-
   // Send results back to parent
   process.send({
     type: 'result',
     prs,
-    orgMembers,
   });
 
   console.log(`[worker] Done — ${prs.length} PRs sent to parent`);

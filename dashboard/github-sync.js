@@ -9,9 +9,11 @@ const MERGED_DIR = path.join(BASE_DIR, 'already-merged');
 const WORKER_PATH = path.join(__dirname, 'github-sync-worker.js');
 const SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
-let _orgMembers = null;
-let _orgMembersFetchedAt = 0;
-const ORG_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+// Hardcoded org members — update manually when team changes
+const ORG_MEMBERS = new Set([
+  'al629176', 'codeghost21', 'giri-aayush', 'graycyrus',
+  'm3ga-mind', 'oxoxdev', 'sanil-23', 'senamakel', 'yellowsnnowmann',
+]);
 
 let _syncing = false; // prevent overlapping syncs
 
@@ -26,31 +28,9 @@ function ghJson(cmd) {
   }
 }
 
-function fetchOrgMembers() {
-  const now = Date.now();
-  if (_orgMembers && (now - _orgMembersFetchedAt) < ORG_CACHE_TTL) {
-    return _orgMembers;
-  }
-
-  try {
-    const out = execSync(
-      `gh api orgs/tinyhumansai/members --jq '.[].login'`,
-      { encoding: 'utf-8', timeout: 15000, stdio: ['pipe', 'pipe', 'pipe'] }
-    );
-    if (out) {
-      _orgMembers = new Set(out.trim().split('\n').map(s => s.trim().toLowerCase()).filter(Boolean));
-      _orgMembersFetchedAt = now;
-      console.log(`[github-sync] Cached ${_orgMembers.size} org members`);
-    }
-  } catch {}
-
-  return _orgMembers || new Set();
-}
-
 function isMember(login) {
   if (!login) return null;
-  const members = fetchOrgMembers();
-  return members.has(login.toLowerCase()) ? 1 : 0;
+  return ORG_MEMBERS.has(login.toLowerCase()) ? 1 : 0;
 }
 
 /**
@@ -98,13 +78,7 @@ function moveTrackingFile(prId) {
  * Process results from the worker — runs on the main thread but only does
  * fast DB writes (no network I/O), so it doesn't block meaningfully.
  */
-function processWorkerResults(prs, orgMembers) {
-  // Update org member cache
-  if (orgMembers && orgMembers.length > 0) {
-    _orgMembers = new Set(orgMembers.map(m => m.toLowerCase()));
-    _orgMembersFetchedAt = Date.now();
-  }
-
+function processWorkerResults(prs) {
   const existingPrs = new Map();
   for (const row of db.getAllPrs()) {
     existingPrs.set(row.id, row);
@@ -220,7 +194,7 @@ function fetchAllOpenPrs() {
   worker.on('message', (msg) => {
     if (msg.type === 'result') {
       try {
-        processWorkerResults(msg.prs, msg.orgMembers);
+        processWorkerResults(msg.prs);
       } catch (err) {
         console.error(`[github-sync] Error processing worker results: ${err.message}`);
       }
@@ -363,7 +337,6 @@ function fetchSinglePr(prId) {
 module.exports = {
   fetchAllOpenPrs,
   fetchSinglePr,
-  fetchOrgMembers,
   isMember,
   handlePrMerged,
   handlePrClosed,
