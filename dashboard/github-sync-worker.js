@@ -32,7 +32,7 @@ function run() {
   console.log(`[worker] Fetching open PRs from ${REPO}...`);
 
   // Batch 1: newest 50 PRs
-  const batch1 = ghJson(`gh pr list --repo ${REPO} --state open --limit ${BATCH_SIZE} --json ${FIELDS}`);
+  const batch1 = ghJson(`gh pr list --repo ${REPO} --state open --limit ${BATCH_SIZE} --json ${FIELDS} --search "draft:false"`);
   if (!batch1) {
     console.error('[worker] Failed to fetch PRs (batch 1)');
     process.send({ type: 'error', error: 'Failed to fetch PRs' });
