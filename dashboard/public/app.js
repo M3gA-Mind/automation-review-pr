@@ -387,6 +387,7 @@ function renderTable(prs) {
       <td>${ciBadge(pr)}</td>
       <td>${mergeableBadge(pr.mergeable)}</td>
       <td>
+          ${pr.status === 'clean' ? `<button class="btn btn-sm btn-green" onclick="approvePr(${pr.id}, this)">Approve</button>` : ''}
           ${pr.is_running
             ? `<button class="btn btn-sm btn-danger" onclick="cancelReview(${pr.id})">Cancel</button>`
             : `<button class="btn btn-sm btn-primary" onclick="triggerReview(${pr.id})">
@@ -538,6 +539,46 @@ async function triggerDiscover() {
   } catch (err) {
     alert('Failed: ' + err.message);
     if (btn) { btn.disabled = false; btn.textContent = 'Discover & Review'; }
+  }
+}
+
+async function approvePr(prId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+
+  try {
+    const res = await fetch(`${API}/api/trigger/approve/${prId}`, { method: 'POST' });
+    const data = await res.json();
+
+    if (!res.ok) {
+      const failures = [];
+      if (data.checks) {
+        if (data.checks.ci_passing === false) failures.push('CI not passing');
+        if (data.checks.no_conflicts === false) failures.push('Merge conflicts');
+        if (data.checks.status_clean === false) failures.push('PR not in clean status');
+      }
+      alert(failures.length > 0 ? `Approval blocked:\n- ${failures.join('\n- ')}` : (data.error || 'Approval failed'));
+      btn.disabled = false;
+      btn.textContent = 'Approve';
+      return;
+    }
+
+    btn.textContent = 'Approved';
+    btn.classList.add('btn-green');
+
+    // Re-render detail page with fresh data
+    const container = document.getElementById('pr-detail');
+    if (container) {
+      const freshRes = await fetch(`${API}/api/prs/${prId}`);
+      if (freshRes.ok) {
+        const freshPr = await freshRes.json();
+        renderPrDetail(freshPr, container);
+      }
+    }
+  } catch (err) {
+    alert('Failed to approve: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Approve';
   }
 }
 
@@ -811,6 +852,9 @@ function renderPrDetail(pr, container) {
 
       <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
         <button class="btn" onclick="syncPr(${pr.id}, this)">Sync</button>
+        ${pr.status === 'clean' && !pr.is_running
+          ? `<button class="btn btn-green" onclick="approvePr(${pr.id}, this)">Approve</button>`
+          : ''}
         ${pr.is_running
           ? `<button class="btn btn-danger" onclick="cancelReview(${pr.id})">Cancel Review</button>
              <span class="running-indicator"><span class="running-dot"></span>Reviewing${pr.running_phase ? ' (Phase ' + pr.running_phase + ')' : ''}...</span>`

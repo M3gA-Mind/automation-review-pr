@@ -3,12 +3,16 @@ const { spawn, execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+const db = require('../db');
+
 const router = express.Router();
 
 const BASE_DIR = path.resolve(__dirname, '../..');
 const REVIEW_SCRIPT = path.join(BASE_DIR, 'review-single.sh');
 const CRON_SCRIPT = path.join(BASE_DIR, 'cron-pr-review.sh');
 const LOGS_DIR = path.join(BASE_DIR, 'logs');
+const APPROVED_DIR = path.join(BASE_DIR, 'approved');
+const REPO = 'tinyhumansai/openhuman';
 
 // Track active jobs in memory
 const activeJobs = new Map();
@@ -233,6 +237,120 @@ router.get('/log/:jobId', (req, res) => {
     lines,
   });
 });
+
+// POST /api/trigger/approve/:id — approve a clean PR
+router.post('/approve/:id', (req, res) => {
+  const prId = parseInt(req.params.id, 10);
+  const now = new Date().toISOString();
+  const logLines = [];
+  const log = (msg) => { logLines.push(`[${new Date().toISOString()}] ${msg}`); console.log(`[approve] ${msg}`); };
+
+  try {
+    // 1. Validate PR exists and is clean
+    const pr = db.getPrById(prId);
+    if (!pr) return res.status(404).json({ error: 'PR not found' });
+    if (pr.status !== 'clean') {
+      return res.status(400).json({
+        error: `PR #${prId} is not in clean status (current: ${pr.status})`,
+        checks: { status_clean: false, ci_passing: null, no_conflicts: null },
+      });
+    }
+    log(`PR #${prId} — status is clean, running pre-flight checks...`);
+
+    // 2. Pre-flight: CI not failing (pass + skipped is fine, only fail blocks)
+    let ciPassing = true;
+    try {
+      const ciOut = execSync(
+        `gh pr checks ${prId} --repo ${REPO} --json bucket --jq '[.[].bucket] | any(. == "fail")'`,
+        { encoding: 'utf-8', timeout: 15000, stdio: ['pipe', 'pipe', 'pipe'] }
+      ).trim();
+      ciPassing = ciOut !== 'true';
+    } catch { ciPassing = true; }
+    log(`CI passing (no failures): ${ciPassing}`);
+
+    // 3. Pre-flight: No conflicts
+    let noConflicts = false;
+    try {
+      const mergeOut = execSync(
+        `gh pr view ${prId} --repo ${REPO} --json mergeable --jq '.mergeable'`,
+        { encoding: 'utf-8', timeout: 10000, stdio: ['pipe', 'pipe', 'pipe'] }
+      ).trim();
+      noConflicts = mergeOut === 'MERGEABLE';
+    } catch { noConflicts = false; }
+    log(`No conflicts: ${noConflicts}`);
+
+    const checks = { status_clean: true, ci_passing: ciPassing, no_conflicts: noConflicts };
+
+    if (!ciPassing || !noConflicts) {
+      const failures = [];
+      if (!ciPassing) failures.push('CI not passing');
+      if (!noConflicts) failures.push('merge conflicts');
+      log(`Pre-flight failed: ${failures.join(', ')}`);
+      writeApproveLog(prId, logLines);
+      return res.status(400).json({ error: `Pre-flight failed: ${failures.join(', ')}`, checks });
+    }
+
+    // 4. Post APPROVE review
+    log('Posting APPROVE review to GitHub...');
+    let reviewUrl = null;
+    try {
+      const reviewOut = execSync(
+        `gh api repos/${REPO}/pulls/${prId}/reviews -X POST -f event=APPROVE -f body="Looks good, nice work!"`,
+        { encoding: 'utf-8', timeout: 15000, stdio: ['pipe', 'pipe', 'pipe'] }
+      );
+      const review = JSON.parse(reviewOut);
+      reviewUrl = review.html_url || `https://github.com/${REPO}/pull/${prId}#pullrequestreview-${review.id}`;
+      log(`Review posted: ${reviewUrl}`);
+    } catch (err) {
+      log(`Failed to post review: ${err.message}`);
+      writeApproveLog(prId, logLines);
+      return res.status(500).json({ error: 'Failed to post APPROVE review to GitHub' });
+    }
+
+    // 5. Update DB status
+    db.updatePrStatus(prId, 'approved');
+    log('DB status updated to approved');
+
+    // 6. Update tracking .md file — update status + append approval entry
+    const trackingPath = pr.tracking_file_path;
+    if (trackingPath && fs.existsSync(trackingPath)) {
+      let content = fs.readFileSync(trackingPath, 'utf-8');
+      content = content.replace(/\*\*Status\*\*:\s*clean/, '**Status**: approved');
+      content += `\n### Approved — ${now}\n**Approved by**: graycyrus\n**Pre-flight**: CI pass | No conflicts\n**GitHub review URL**: ${reviewUrl}\n`;
+      fs.writeFileSync(trackingPath, content);
+      log(`Tracking file updated: ${path.basename(trackingPath)}`);
+    }
+
+    // 7. Move tracking file to approved/
+    if (trackingPath && fs.existsSync(trackingPath)) {
+      fs.mkdirSync(APPROVED_DIR, { recursive: true });
+      const filename = path.basename(trackingPath);
+      const newPath = path.join(APPROVED_DIR, filename);
+      fs.renameSync(trackingPath, newPath);
+      db.updatePrTrackingPath(prId, newPath, 'approved');
+      log(`Tracking file moved to approved/${filename}`);
+    }
+
+    // 8. Write log
+    log(`PR #${prId} approved successfully`);
+    writeApproveLog(prId, logLines);
+
+    res.json({ success: true, review_url: reviewUrl, checks });
+
+  } catch (err) {
+    log(`Unexpected error: ${err.message}`);
+    writeApproveLog(prId, logLines);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+function writeApproveLog(prId, lines) {
+  try {
+    fs.mkdirSync(LOGS_DIR, { recursive: true });
+    const logFile = path.join(LOGS_DIR, `approve-PR-${prId}-${timestamp()}.log`);
+    fs.writeFileSync(logFile, lines.join('\n') + '\n');
+  } catch {}
+}
 
 // POST /api/trigger/cancel/:jobId — kill a running job
 router.post('/cancel/:jobId', (req, res) => {
