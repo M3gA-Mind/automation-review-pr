@@ -29,6 +29,16 @@ export function PrActions({ pr, onAction }: { pr: Pr; onAction: () => void }) {
         </Button>
       )}
 
+      <Button
+        size="sm"
+        variant="purple"
+        onClick={() => run('fix', () => api.triggerFix(pr.id))}
+        disabled={busy !== null || pr.is_fixing}
+        title={pr.is_fixing ? 'Fix already running — attach in tmux' : 'Run `pnpm review fix` in a tmux window'}
+      >
+        {busy === 'fix' ? 'Starting…' : pr.is_fixing ? 'Fixing…' : 'Trigger Fix'}
+      </Button>
+
       {pr.status === 'clean' && !pr.is_running && (
         <Button size="sm" variant="green" onClick={() => run('approve', () => api.approve(pr.id))} disabled={busy !== null}>
           {busy === 'approve' ? 'Approving…' : 'Approve'}

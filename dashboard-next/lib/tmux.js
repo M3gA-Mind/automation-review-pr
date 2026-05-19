@@ -114,6 +114,57 @@ function quote(s) {
   return `'${String(s).replace(/'/g, `'\\''`)}'`;
 }
 
+/**
+ * Spawn `pnpm review fix <prId>` inside one of the openhuman workspace
+ * clones, in its own tmux window named `fix-<id>`. Separate from `pr-<id>`
+ * (the review window) so both can run concurrently.
+ */
+function startFix(prId, workspaceDir, logFile) {
+  if (!isAvailable()) throw new Error('tmux is not installed on PATH');
+  if (!fs.existsSync(workspaceDir)) throw new Error(`workspace not found: ${workspaceDir}`);
+  ensureSession();
+  fs.mkdirSync(STATE_DIR, { recursive: true });
+
+  const window = `fix-${prId}`;
+  if (listWindows().includes(window)) {
+    tryExec(`tmux kill-window -t ${SESSION}:${window} 2>/dev/null`);
+  }
+  const marker = path.join(STATE_DIR, `fix-${prId}.exit`);
+  try { fs.unlinkSync(marker); } catch {}
+
+  // `pnpm review fix` spawns interactive `claude`, so we can't pipe it
+  // through `tee` (would break the TTY). Use `tmux pipe-pane` instead to
+  // mirror the pane's output to a log file without disturbing the terminal.
+  const script = [
+    `cd ${quote(workspaceDir)}`,
+    `pnpm review fix ${Number(prId)}`,
+    `echo $? > ${quote(marker)}`,
+    'exec bash',
+  ].join(' ; ');
+
+  exec(`tmux new-window -t ${SESSION} -n ${window} -c ${quote(workspaceDir)} ${quote(script)}`);
+  // Mirror pane output to the log file in the background.
+  tryExec(`tmux pipe-pane -o -t ${SESSION}:${window} ${quote(`cat >> ${logFile}`)}`);
+  return {
+    session: SESSION,
+    window,
+    logFile,
+    marker,
+    workspace: workspaceDir,
+    attach: `tmux attach -t ${SESSION} \\; select-window -t ${window}`,
+  };
+}
+
+function isFixRunning(prId) {
+  if (!listWindows().includes(`fix-${prId}`)) return false;
+  return !fs.existsSync(path.join(STATE_DIR, `fix-${prId}.exit`));
+}
+
+function killFixWindow(prId) {
+  tryExec(`tmux kill-window -t ${SESSION}:fix-${prId} 2>/dev/null`);
+  try { fs.unlinkSync(path.join(STATE_DIR, `fix-${prId}.exit`)); } catch {}
+}
+
 module.exports = {
   SESSION,
   STATE_DIR,
@@ -121,9 +172,12 @@ module.exports = {
   sessionExists,
   ensureSession,
   startReview,
+  startFix,
   killWindow,
+  killFixWindow,
   hasWindow,
   isRunning,
+  isFixRunning,
   exitCode,
   paneCommand,
   listWindows,

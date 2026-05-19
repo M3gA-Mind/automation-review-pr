@@ -75,6 +75,10 @@ export interface Pr {
   action_taken?: string;
   cycles?: ReviewCycle[];
   is_running?: boolean;
+  is_fixing?: boolean;
+  tmux_window?: string | null;
+  tmux_fix_window?: string | null;
+  tmux_exit_code?: number | null;
 }
 
 export interface Stats {

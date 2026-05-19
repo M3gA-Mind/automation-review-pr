@@ -16,13 +16,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const tmuxRunning = tmux.isRunning(id);
   const tmuxWindow = tmux.hasWindow(id) ? `${tmux.SESSION}:pr-${id}` : null;
   const tmuxExit = tmuxWindow ? tmux.exitCode(id) : null;
+  const fixRunning = tmux.isFixRunning(id);
+  const fixWindow = tmux.listWindows().includes(`fix-${id}`) ? `${tmux.SESSION}:fix-${id}` : null;
   const isRunning = job ? !job.done : tmuxRunning || statusRunning;
 
   return NextResponse.json({
     ...pr,
     cycles,
     is_running: isRunning,
+    is_fixing: fixRunning,
     tmux_window: tmuxWindow,
     tmux_exit_code: tmuxExit,
+    tmux_fix_window: fixWindow,
   });
 }

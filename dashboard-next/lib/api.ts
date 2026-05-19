@@ -43,6 +43,7 @@ export const api = {
     ),
   // Mutations
   triggerReview: (id: number) => jpost<{ jobId: string; message: string }>(`/api/trigger/review/${id}`),
+  triggerFix: (id: number) => jpost<{ pr: number; window: string; workspace: string; message: string }>(`/api/trigger/fix/${id}`),
   triggerDiscover: () => jpost<{ jobId: string }>('/api/trigger/discover'),
   cancelJob: (jobId: string) => jpost<{ message: string }>(`/api/trigger/cancel/${encodeURIComponent(jobId)}`),
   approve: (id: number) => jpost<{ success: boolean; review_url?: string }>(`/api/trigger/approve/${id}`),
