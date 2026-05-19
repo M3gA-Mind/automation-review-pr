@@ -585,6 +585,26 @@ async function approvePr(prId, btn) {
   }
 }
 
+function showModal(html) {
+  // Remove existing modal
+  const existing = document.getElementById('modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-overlay';
+  overlay.innerHTML = `<div class="modal-content">${html}</div>`;
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function closeModal() {
+  const overlay = document.getElementById('modal-overlay');
+  if (overlay) overlay.remove();
+}
+
 async function mergePr(prId, btn) {
   btn.disabled = true;
   btn.textContent = 'Checking...';
@@ -594,31 +614,59 @@ async function mergePr(prId, btn) {
     const preflight = await fetch(`${API}/api/trigger/merge-preflight/${prId}`);
     const data = await preflight.json();
 
-    // 2. Build confirmation dialog content
-    const checksHtml = data.checks.map(c => {
-      const icon = c.pass ? 'PASS' : 'FAIL';
-      return `[${icon}] ${c.name}${c.bucket && !c.pass ? ' (' + c.bucket + ')' : ''}`;
-    }).join('\n');
+    // 2. Build modal content
+    const checksRows = data.checks.map(c => {
+      const badge = c.pass
+        ? '<span class="badge badge-green">PASS</span>'
+        : '<span class="badge badge-red">FAIL</span>';
+      const detail = c.bucket && !c.pass ? `<span style="color:var(--text-muted);font-size:12px">(${c.bucket})</span>` : '';
+      return `<tr><td>${badge}</td><td>${esc(c.name)} ${detail}</td></tr>`;
+    }).join('');
 
-    const summary = data.allPass
-      ? `All ${data.checks.length} checks passing.`
-      : `${data.failCount} of ${data.checks.length} checks failing.`;
+    const passCount = data.checks.filter(c => c.pass).length;
+    const summaryBadge = data.allPass
+      ? `<span class="badge badge-green">${passCount}/${data.checks.length} passing</span>`
+      : `<span class="badge badge-yellow">${passCount}/${data.checks.length} passing, ${data.failCount} failing</span>`;
 
-    const confirmed = confirm(`Pre-merge checks for PR #${prId}:\n\n${checksHtml}\n\n${summary}\n\nProceed with squash merge?`);
+    const modalHtml = `
+      <h3 style="margin-bottom:12px">Merge PR #${prId}</h3>
+      <div style="margin-bottom:12px">${summaryBadge}</div>
+      <div class="pr-table-wrap" style="max-height:400px;overflow-y:auto;margin-bottom:16px">
+        <table>
+          <thead><tr><th style="width:70px">Status</th><th>Check</th></tr></thead>
+          <tbody>${checksRows}</tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-purple" id="modal-merge-btn" onclick="executeMerge(${prId})">Squash & Merge</button>
+      </div>
+    `;
 
-    if (!confirmed) {
-      btn.disabled = false;
-      btn.textContent = 'Merge';
-      return;
-    }
+    showModal(modalHtml);
+    btn.disabled = false;
+    btn.textContent = 'Merge';
 
-    // 3. Execute merge
-    btn.textContent = 'Merging...';
+  } catch (err) {
+    alert('Failed to fetch checks: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Merge';
+  }
+}
+
+async function executeMerge(prId) {
+  const mergeBtn = document.getElementById('modal-merge-btn');
+  if (mergeBtn) {
+    mergeBtn.disabled = true;
+    mergeBtn.textContent = 'Merging...';
+  }
+
+  try {
     const mergeRes = await fetch(`${API}/api/trigger/merge/${prId}`, { method: 'POST' });
     const mergeData = await mergeRes.json();
 
     if (mergeRes.ok) {
-      btn.textContent = 'Merged';
+      closeModal();
       // Re-render
       const container = document.getElementById('pr-detail');
       if (container) {
@@ -631,14 +679,18 @@ async function mergePr(prId, btn) {
         await fetchAndRender();
       }
     } else {
+      if (mergeBtn) {
+        mergeBtn.disabled = false;
+        mergeBtn.textContent = 'Squash & Merge';
+      }
       alert(mergeData.error || 'Merge failed');
-      btn.disabled = false;
-      btn.textContent = 'Merge';
     }
   } catch (err) {
+    if (mergeBtn) {
+      mergeBtn.disabled = false;
+      mergeBtn.textContent = 'Squash & Merge';
+    }
     alert('Failed: ' + err.message);
-    btn.disabled = false;
-    btn.textContent = 'Merge';
   }
 }
 
