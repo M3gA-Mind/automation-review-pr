@@ -65,7 +65,6 @@ router.get('/prs', (req, res) => {
     return {
       ...pr,
       is_running: isRunning,
-      running_phase: isRunning ? (liveStatus?.pr === pr.id ? liveStatus.phase : 'A') : null,
     };
   });
 
@@ -94,7 +93,6 @@ router.get('/prs/:id', (req, res) => {
     ...pr,
     cycles,
     is_running: isRunning,
-    running_phase: isRunning ? (liveStatus?.pr === id ? liveStatus.phase : 'A') : null,
   });
 });
 

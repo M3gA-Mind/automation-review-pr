@@ -9,25 +9,30 @@ Automated PR reviewer for `tinyhumansai/openhuman`. Runs hourly via cron, discov
 ```
 review-pr/
 ├── cron-pr-review.sh          # Hourly cron — discovers + reviews PRs in parallel
-├── review-single.sh           # Reviews one PR: Phase A (intelligence) → Phase B (review + post)
-├── prompt.md                  # Full single-prompt reviewer (legacy)
-├── discover-prompt.md         # Phase 0: find eligible PRs
-├── phase-a-intelligence-prompt.md  # Phase A: gather context, read code, dedup CodeRabbit
-├── phase-b-review-prompt.md   # Phase B: produce review, post to GitHub, update tracking
-├── review-single-pr-prompt.md # Alternative single-pass prompt
+├── review-single.sh           # Reviews one PR: bash pre-checks → single Claude invocation
+├── prompt-parts/              # Modular prompt snippets assembled conditionally
+│   ├── header.md, core-steps.md, review-post.md, tracking-update.md, footer.md  (always)
+│   ├── linked-issues.md, continuation.md, smart-re-review.md                    (conditional)
+│   └── coderabbit-dedup.md, dep-audit.md, test-coverage.md, impact-scan.md      (conditional)
+├── discover-prompt.md         # Cron: find eligible PRs
+├── .archive/                  # Archived old phase-a/phase-b prompts
 ├── tinyhumansai-openhuman/    # Per-PR tracking files (under review / changes requested)
 ├── to-be-approved/            # Clean PRs awaiting manual approval
-├── logs/                      # Cron + per-PR review logs
+├── approved/                  # PRs approved via dashboard
+├── already-merged/            # Merged PRs (archived tracking files)
+├── logs/                      # Cron + per-PR review/approve/merge logs
 ├── status.json                # Live review status (written by review-single.sh)
+├── docs/                      # Feature documentation
 └── dashboard/                 # Web UI (Express + SQLite) at localhost:3847
     ├── server.js              # Express server, wires everything
     ├── db.js                  # SQLite schema + queries (WAL mode)
     ├── parser.js              # Parses .md tracking files into structured data
     ├── migrate.js             # Seeds DB from existing .md files on startup
     ├── sync.js                # fs.watch() — auto-syncs when .md files change
-    ├── github-sync.js         # Fetches all open PRs from GitHub API every 5 min
-    ├── routes/api.js          # REST API
-    ├── routes/trigger.js      # Manual review trigger endpoints
+    ├── github-sync.js         # Fetches all open PRs from GitHub API (paginated, every 30 min)
+    ├── github-sync-worker.js  # Worker process for non-blocking GitHub sync
+    ├── routes/api.js          # REST API (includes per-PR sync, approve, merge endpoints)
+    ├── routes/trigger.js      # Review/approve/merge trigger endpoints
     └── public/                # Frontend (vanilla HTML/CSS/JS)
 ```
 
@@ -53,7 +58,7 @@ Each PR gets `PR-<N>.md` with: metadata (author, branch, URL, status, last revie
 - **`pr_github`** is a 1:1 extension table with GitHub-only metadata (diff stats, mergeable, labels, etc.)
 - **Member detection**: org members fetched from `gh api orgs/tinyhumansai/members`, cached 1h
 - **File watcher**: `fs.watch()` on tracking dirs for near-real-time sync
-- **status.json**: written by review-single.sh to show live Phase A/B progress
+- **status.json**: written by review-single.sh to show live review progress
 
 ## Running
 
