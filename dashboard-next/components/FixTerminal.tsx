@@ -1,9 +1,45 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { api } from '@/lib/api';
 import { Section } from './Section';
 import { Badge } from './Badge';
 import { Button } from './Button';
+
+// Detect http(s) URLs in plain pane text and wrap them in <a target="_blank">.
+// Common trailing punctuation (.,;:!?)] is peeled off so it doesn't end up
+// inside the link — handles things like "see https://x.com/foo." cleanly.
+const URL_RE = /(https?:\/\/[^\s<>"'`]+)/g;
+const TRAILING_PUNCT = /[.,;:!?\)\]]+$/;
+
+function linkify(text: string): ReactNode[] {
+  const out: ReactNode[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  URL_RE.lastIndex = 0;
+  while ((m = URL_RE.exec(text)) !== null) {
+    let url = m[0];
+    const trail = url.match(TRAILING_PUNCT);
+    const trailStr = trail ? trail[0] : '';
+    if (trailStr) url = url.slice(0, -trailStr.length);
+    if (m.index > last) out.push(text.slice(last, m.index));
+    out.push(
+      <a
+        key={`${m.index}-${url}`}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[var(--color-accent)] underline decoration-dotted underline-offset-2 hover:decoration-solid break-all"
+      >
+        {url}
+      </a>,
+    );
+    if (trailStr) out.push(trailStr);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
 
 interface FixStatus {
   running: boolean;
@@ -95,7 +131,7 @@ export function FixTerminal({ prId }: { prId: number }) {
         onScroll={onScroll}
         className="bg-black/40 border border-[var(--color-border)] rounded p-3 text-xs leading-snug font-mono max-h-[480px] overflow-auto whitespace-pre-wrap break-words"
       >
-        {status.content || '(empty)'}
+        {status.content ? linkify(status.content) : '(empty)'}
       </pre>
     </Section>
   );
