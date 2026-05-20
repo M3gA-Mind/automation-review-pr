@@ -114,6 +114,17 @@ export const api = {
   },
   syncPr: (id: number) => jpost<Pr>(`/api/prs/${id}/sync`),
   syncAll: () => jpost<{ synced: number }>('/api/sync'),
+  // Best-effort post-merge welcome. Errors here shouldn't bubble up — the
+  // merge has already succeeded by the time we call this.
+  welcome: async (id: number) => {
+    try {
+      return await jpost<{ posted: boolean; first_contribution?: boolean; comment?: string; error?: string }>(
+        `/api/trigger/welcome/${id}`,
+      );
+    } catch (e: any) {
+      return { posted: false, error: e.message };
+    }
+  },
 };
 
 // Public GitHub API — direct from browser (repo is public).
