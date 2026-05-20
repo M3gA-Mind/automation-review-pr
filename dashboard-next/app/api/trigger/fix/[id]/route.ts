@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { triggerJobs, tmux } from '@/lib/server-deps';
+import { assignReviewer } from '@/lib/github-assign';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const info = paneId
       ? tmux.startFixInSpecificPane(prId, logFile, paneId)
       : tmux.startFixInPane(prId, logFile);
+    const assign = assignReviewer(prId);
     return NextResponse.json({
       pr: prId,
       session: info.session,
@@ -38,6 +40,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       workspace: info.workspace,
       attach: info.attach,
       logFile: info.logFile,
+      assigned: assign.assigned,
+      assign_error: assign.error ?? null,
       message: `Fix for PR #${prId} sent to ${info.workspace} (${info.session}:${info.window})`,
     });
   } catch (err: any) {

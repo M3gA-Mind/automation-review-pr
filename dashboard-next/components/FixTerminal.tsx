@@ -54,8 +54,22 @@ interface FixStatus {
 export function FixTerminal({ prId }: { prId: number }) {
   const [status, setStatus] = useState<FixStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
   const preRef = useRef<HTMLPreElement>(null);
   const stickToBottom = useRef(true);
+
+  const send = async (payload: { text?: string; key?: string }) => {
+    setSending(true);
+    try {
+      await api.fixSend(prId, payload);
+      if (payload.text !== undefined) setInput('');
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setSending(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -133,6 +147,50 @@ export function FixTerminal({ prId }: { prId: number }) {
       >
         {status.content ? linkify(status.content) : '(empty)'}
       </pre>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!input.trim() && !input) return;
+          send({ text: input });
+        }}
+        className="mt-3 flex flex-col gap-2"
+      >
+        <div className="flex gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type a prompt for claude, then Enter to send…"
+            disabled={sending}
+            className="flex-1 rounded border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] disabled:opacity-50"
+          />
+          <Button size="sm" variant="primary" disabled={sending || (!input && input !== '')}>
+            {sending ? 'Sending…' : 'Send ↵'}
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-1.5 text-xs text-[var(--color-text-muted)]">
+          <span className="self-center mr-1">Keys:</span>
+          {[
+            { label: 'Enter', key: 'Enter' },
+            { label: 'Esc', key: 'Escape' },
+            { label: 'Ctrl-C', key: 'C-c' },
+            { label: 'Ctrl-D', key: 'C-d' },
+            { label: '↑', key: 'Up' },
+            { label: '↓', key: 'Down' },
+            { label: 'Tab', key: 'Tab' },
+          ].map((k) => (
+            <button
+              key={k.key}
+              type="button"
+              onClick={() => send({ key: k.key })}
+              disabled={sending}
+              className="rounded border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border)] px-2 py-0.5 disabled:opacity-50"
+            >
+              {k.label}
+            </button>
+          ))}
+        </div>
+      </form>
     </Section>
   );
 }

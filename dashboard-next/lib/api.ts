@@ -71,6 +71,19 @@ export const api = {
       mapping: { pane_id: string; window: string; workspace: string; logFile: string; started_at: string } | null;
       content: string | null;
     }>(`/api/trigger/fix/${id}?lines=${lines}`),
+  fixSend: async (id: number, payload: { text?: string; key?: string }) => {
+    const res = await fetch(`/api/trigger/fix/${id}/send`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || `${res.status}`);
+    }
+    return res.json() as Promise<{ sent: boolean; pane_id: string }>;
+  },
   listPanes: () =>
     jget<{
       session: string | null;

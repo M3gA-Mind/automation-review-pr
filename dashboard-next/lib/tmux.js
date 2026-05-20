@@ -370,4 +370,29 @@ module.exports = {
   pickIdlePane,
   listIdleOpenhumanPanes,
   capturePane,
+  sendToPane,
+  sendKey,
 };
+
+/**
+ * Type `text` into a pane and press Enter. Used by the Fix Terminal UI so
+ * the user can prompt claude (or any program holding the pane) without
+ * leaving the dashboard.
+ */
+function sendToPane(paneId, text) {
+  if (!paneId) throw new Error('pane_id is required');
+  // -l (literal) prevents tmux from interpreting key names inside the text.
+  // Without it, a stray `Enter` token in the user's prompt would be eaten.
+  exec(`tmux send-keys -l -t ${paneId} ${quote(text)}`);
+  exec(`tmux send-keys -t ${paneId} C-m`);
+}
+
+/**
+ * Send a named key (no Enter). Lets the UI offer quick keys like Escape,
+ * Ctrl-C, arrow keys, etc.
+ */
+function sendKey(paneId, key) {
+  if (!paneId) throw new Error('pane_id is required');
+  // tmux key names: Escape, Enter, Up, Down, C-c, M-Up, etc.
+  exec(`tmux send-keys -t ${paneId} ${quote(key)}`);
+}
