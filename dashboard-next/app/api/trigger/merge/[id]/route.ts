@@ -11,6 +11,17 @@ const REPO = 'tinyhumansai/openhuman';
 // Single-quote escape for shell. 'foo' → 'foo'; 'it\'s' → 'it'\''s'.
 const sh = (s: string) => `'${String(s).replace(/'/g, `'\\''`)}'`;
 
+// Substrings (case-insensitive) that flag a commit author as an AI tool
+// rather than a human contributor. We strip these from Co-authored-by
+// trailers on the squash commit so the final history credits people, not
+// the bots they ran. Matches both name and email of each author.
+const AI_AUTHOR_RE =
+  /(copilot|claude|cursor|codex|anthropic|openai|github-actions|deepseek|kilocode|aider|gemini-cli|chatgpt|gpt-4|sourcegraph-cody|continue\.dev|tabnine|sweep-ai)/i;
+
+function isAiTool(name: string, email: string): boolean {
+  return AI_AUTHOR_RE.test(name) || AI_AUTHOR_RE.test(email);
+}
+
 // Build the squash commit subject + body for a PR. Keeps co-author trailers
 // for every distinct commit author on the PR and appends one for the gh
 // user actually performing the merge ("our github creds") so the merger
@@ -25,7 +36,19 @@ function buildSquashMessage(prId: number) {
   );
 
   const subject = view.title || `PR #${prId}`;
-  const description = (view.body || '').trim();
+  // PRs often include Co-authored-by trailers inside the description (claude
+  // itself appends one). Drop any AI-tool trailers from the body so they
+  // don't slip into the squash commit even though we skipped them above.
+  const rawDescription = (view.body || '').trim();
+  const description = rawDescription
+    .split('\n')
+    .filter((line: string) => {
+      const m = line.match(/^Co-authored-by:\s*(.+?)\s*<([^>]+)>\s*$/i);
+      if (!m) return true;
+      return !isAiTool(m[1], m[2]);
+    })
+    .join('\n')
+    .trim();
 
   const coAuthors = new Map<string, string>();
   for (const commit of view.commits || []) {
@@ -35,6 +58,9 @@ function buildSquashMessage(prId: number) {
       // Prefer the noreply form if no real email is exposed.
       const email = a.email || (a.login ? `${a.login}@users.noreply.github.com` : null);
       if (!name || !email) continue;
+      // Drop AI tooling authors (copilot, claude, cursor, codex, …) so the
+      // squash commit credits humans only.
+      if (isAiTool(name, email)) continue;
       coAuthors.set(email.toLowerCase(), `Co-authored-by: ${name} <${email}>`);
     }
   }
