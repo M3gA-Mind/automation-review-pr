@@ -53,21 +53,25 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const stats = `+${view.additions}/-${view.deletions} across ${view.changedFiles} file${view.changedFiles === 1 ? '' : 's'}`;
 
     const prompt = [
-      'Write a short thank-you comment (2-3 sentences) to leave on a merged GitHub pull request.',
+      'Write a short, casual thank-you comment (2-3 sentences) to leave on a merged GitHub pull request.',
       '',
       `Contributor: ${greeting}`,
       `PR title: ${view.title}`,
       `Diff: ${stats}`,
       description ? `Description excerpt: ${description}` : '',
       isFirst
-        ? `This is their FIRST merged PR to this repo. Invite them to our builder Discord at ${DISCORD_URL} — phrase it as exclusive access to a community of builders.`
-        : 'They have contributed to this repo before. Thank them warmly but DO NOT mention Discord or any invite.',
+        ? `This is their FIRST merged PR to this repo. Invite them to our builder discord at ${DISCORD_URL} as exclusive access to a community of builders.`
+        : 'They have contributed to this repo before. Thank them warmly but DO NOT mention discord or any invite.',
       '',
-      'Requirements:',
-      '- Address them by name/handle once.',
-      '- Mention ONE specific thing about this contribution (use the title or description).',
-      '- Warm but concise tone. No emojis. No preamble like "Here is the comment". No quotes around the output.',
-      '- Output only the comment body, ready to post verbatim.',
+      'Style requirements:',
+      '- ALL LOWERCASE. no capital letters anywhere, including names/handles.',
+      '- casual, friendly tone, like talking to a teammate. a bit excited and hyped about the merge.',
+      '- sprinkle in a few relevant emojis (2-3 total, not more). examples: 🙌 🚀 ✨ 💚 🎉 🔥.',
+      '- NO em dashes (—) or en dashes (–). use commas, periods, or parens instead.',
+      '- address them by handle once.',
+      '- call out one specific thing about this contribution (use the title or description).',
+      '- no preamble like "here is the comment". no quotes around the output.',
+      '- output only the comment body, ready to post verbatim.',
     ]
       .filter(Boolean)
       .join('\n');
