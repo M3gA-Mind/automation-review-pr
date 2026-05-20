@@ -316,7 +316,7 @@ router.post('/approve/:id', (req, res) => {
     if (trackingPath && fs.existsSync(trackingPath)) {
       let content = fs.readFileSync(trackingPath, 'utf-8');
       content = content.replace(/\*\*Status\*\*:\s*clean/, '**Status**: approved');
-      content += `\n### Approved — ${now}\n**Approved by**: graycyrus\n**Pre-flight**: CI pass | No conflicts\n**GitHub review URL**: ${reviewUrl}\n`;
+      content += `\n### Approved — ${now}\n**Approved by**: M3gA-Mind\n**Pre-flight**: CI pass | No conflicts\n**GitHub review URL**: ${reviewUrl}\n`;
       fs.writeFileSync(trackingPath, content);
       log(`Tracking file updated: ${path.basename(trackingPath)}`);
     }
@@ -359,7 +359,7 @@ router.post('/unapprove/:id', (req, res) => {
     // Dismiss the APPROVE review on GitHub
     try {
       const reviews = execSync(
-        `gh api repos/${REPO}/pulls/${prId}/reviews --jq '[.[] | select(.user.login == "graycyrus" and .state == "APPROVED")] | last | .id'`,
+        `gh api repos/${REPO}/pulls/${prId}/reviews --jq '[.[] | select(.user.login == "M3gA-Mind" and .state == "APPROVED")] | last | .id'`,
         { encoding: 'utf-8', timeout: 15000, stdio: ['pipe', 'pipe', 'pipe'] }
       ).trim();
       if (reviews) {

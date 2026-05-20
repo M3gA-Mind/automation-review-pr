@@ -22,7 +22,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
     try {
       const reviews = execSync(
-        `gh api repos/${REPO}/pulls/${prId}/reviews --jq '[.[] | select(.user.login == "graycyrus" and .state == "APPROVED")] | last | .id'`,
+        `gh api repos/${REPO}/pulls/${prId}/reviews --jq '[.[] | select(.user.login == "M3gA-Mind" and .state == "APPROVED")] | last | .id'`,
         { encoding: 'utf-8', timeout: 15000, stdio: ['pipe', 'pipe', 'pipe'] }
       ).trim();
       if (reviews) {

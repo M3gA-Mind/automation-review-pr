@@ -23,13 +23,13 @@ query($owner:String!, $repo:String!, $number:Int!) {
 
 For each unresolved thread, decide: **resolved by code**, **resolved by explanation**, **still open**, or **superseded**.
 
-If resolved, reply and resolve (only for `graycyrus` threads):
+If resolved, reply and resolve (only for `M3gA-Mind` threads):
 ```bash
 gh api repos/tinyhumansai/openhuman/pulls/comments/<comment_database_id>/replies -X POST -f body="Confirmed fixed — <reason>."
 gh api graphql -f query='mutation($threadId:ID!) { resolveReviewThread(input:{threadId:$threadId}) { thread { id isResolved } } }' -F threadId=<thread_id>
 ```
 
-Do NOT resolve CodeRabbit/bot threads or other human reviewers' threads. If a prior `REQUEST_CHANGES` from `graycyrus` exists and all changes are addressed, post the new review as `COMMENT` noting previous changes are addressed.
+Do NOT resolve CodeRabbit/bot threads or other human reviewers' threads. If a prior `REQUEST_CHANGES` from `M3gA-Mind` exists and all changes are addressed, post the new review as `COMMENT` noting previous changes are addressed.
 
 Record all resolution actions in tracking file.
 

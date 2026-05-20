@@ -92,7 +92,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     if (trackingPath && fs.existsSync(trackingPath)) {
       let content = fs.readFileSync(trackingPath, 'utf-8');
       content = content.replace(/\*\*Status\*\*:\s*clean/, '**Status**: approved');
-      content += `\n### Approved — ${now}\n**Approved by**: graycyrus\n**Pre-flight**: CI pass | No conflicts\n**GitHub review URL**: ${reviewUrl}\n`;
+      content += `\n### Approved — ${now}\n**Approved by**: M3gA-Mind\n**Pre-flight**: CI pass | No conflicts\n**GitHub review URL**: ${reviewUrl}\n`;
       fs.writeFileSync(trackingPath, content);
       log(`Tracking file updated: ${path.basename(trackingPath)}`);
 

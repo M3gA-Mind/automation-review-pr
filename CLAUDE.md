@@ -2,7 +2,7 @@
 
 ## What this repo does
 
-Automated PR reviewer for `tinyhumansai/openhuman`. Runs hourly via cron, discovers open PRs, reviews them using Claude CLI, posts reviews to GitHub as `graycyrus`, and tracks everything in local markdown files.
+Automated PR reviewer for `tinyhumansai/openhuman`. Runs hourly via cron, discovers open PRs, reviews them using Claude CLI, posts reviews to GitHub as `M3gA-Mind`, and tracks everything in local markdown files.
 
 ## Architecture
 
@@ -38,7 +38,7 @@ review-pr/
 
 ## Key conventions
 
-- **Reviewer identity**: Posts as `graycyrus` (Cyrus Grey)
+- **Reviewer identity**: Posts as `M3gA-Mind` (M3gA-Mind)
 - **Target repo**: `tinyhumansai/openhuman`
 - **Never auto-approve** — only REQUEST_CHANGES or COMMENT. Clean PRs go to `to-be-approved/`
 - **Never merge** — merging is manual
@@ -70,7 +70,7 @@ cd dashboard && node server.js
 ./review-single.sh <PR_NUMBER>
 
 # Cron (hourly)
-0 * * * * /Users/cyrus/Desktop/automation/review-pr/cron-pr-review.sh
+0 * * * * /Users/megamind/tinyhuman/automation-review-pr/cron-pr-review.sh
 ```
 
 ## Dependencies

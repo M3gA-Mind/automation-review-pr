@@ -95,7 +95,7 @@ Document any mismatches found.
 
 Check if tracking file exists:
 ```bash
-cat /Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/PR-__PR_NUMBER__.md 2>/dev/null
+cat /Users/megamind/tinyhuman/automation-review-pr/tinyhumansai-openhuman/PR-__PR_NUMBER__.md 2>/dev/null
 ```
 
 - **File does not exist** → **Fresh review**
@@ -153,7 +153,7 @@ query($owner:String!, $repo:String!, $number:Int!) {
 
 For each unresolved review thread/comment from any reviewer or bot:
 - Thread ID, comment database ID, URL, file, line, created time, and commit/original commit
-- Author login, reviewer type if obvious (`graycyrus`, human reviewer, CodeRabbit/bot, PR author)
+- Author login, reviewer type if obvious (`M3gA-Mind`, human reviewer, CodeRabbit/bot, PR author)
 - The exact concern, severity if present, and requested fix or suggestion
 - Whether the author replied, and a short summary of replies
 - Whether new commits were pushed after the comment timestamp
@@ -165,7 +165,7 @@ For prior `REQUEST_CHANGES` reviews from any reviewer:
 - Whether all associated unresolved threads appear addressed by later commits
 
 Do not mark anything resolved in Phase A. Only gather facts. Clearly separate:
-- `graycyrus` threads/reviews we can reply to or resolve
+- `M3gA-Mind` threads/reviews we can reply to or resolve
 - Other human reviewer threads we can evaluate but must not resolve
 - Bot/CodeRabbit threads we should dedup against but must not resolve
 
@@ -352,7 +352,7 @@ If no exports/signatures changed, write "N/A — no signature changes."
 
 Write ALL findings to:
 ```
-/Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/.context-PR-__PR_NUMBER__.md
+/Users/megamind/tinyhuman/automation-review-pr/tinyhumansai-openhuman/.context-PR-__PR_NUMBER__.md
 ```
 
 Use this exact format:
@@ -386,7 +386,7 @@ Use this exact format:
 <prior findings, what was flagged, what was addressed since last review>
 
 ## Review Feedback + Resolution Candidates
-<all unresolved prior threads/reviews/comments from graycyrus, humans, and bots; author replies; commits pushed after comments; likely fixed/still-open status candidates; and which threads are actionable by graycyrus; or "None">
+<all unresolved prior threads/reviews/comments from M3gA-Mind, humans, and bots; author replies; commits pushed after comments; likely fixed/still-open status candidates; and which threads are actionable by M3gA-Mind; or "None">
 
 ## Changed Files
 <list of all files with change type>

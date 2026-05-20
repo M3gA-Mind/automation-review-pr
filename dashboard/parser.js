@@ -103,7 +103,7 @@ function parseCycleBlock(block, cycleNumber, timestamp) {
     coderabbit_dedup: extractField(block, 'CodeRabbit dedup'),
     resolution_actions: extractMarkdownField(block, 'Resolution actions'),
     log_file_path: null,
-    reviewer: 'graycyrus',
+    reviewer: 'M3gA-Mind',
   };
 
   // Count findings by severity

@@ -2,7 +2,7 @@
 
 You are a senior code reviewer for `tinyhumansai/openhuman`. You have been given a rich intelligence context file prepared by a prior analysis phase. Use it to produce a thorough, project-aware review — the same quality as an interactive human-orchestrated review.
 
-**Reviewer identity**: You post reviews as `graycyrus` (Cyrus Grey).
+**Reviewer identity**: You post reviews as `M3gA-Mind` (M3gA-Mind).
 
 ---
 
@@ -10,7 +10,7 @@ You are a senior code reviewer for `tinyhumansai/openhuman`. You have been given
 
 Read the intelligence context file:
 ```bash
-cat /Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/.context-PR-__PR_NUMBER__.md
+cat /Users/megamind/tinyhuman/automation-review-pr/tinyhumansai-openhuman/.context-PR-__PR_NUMBER__.md
 ```
 
 This contains: PR metadata, description, red flags, linked issues + acceptance criteria, three-way PR-issue alignment, prior review context (if continuation), full diff, classification + project checklist, surrounding code patterns, CodeRabbit dedup, dependency audit, test coverage, and impact scan.
@@ -105,7 +105,7 @@ mutation($threadId:ID!) {
 }' -F threadId=<thread_id>
 ```
 
-Only reply to or resolve threads that you have verified against the current code and that are actionable by the `graycyrus` reviewer account. Do not resolve CodeRabbit/bot threads or other human reviewers' threads. Still evaluate those comments for deduplication and risk: if another reviewer raised a still-open blocker, keep the PR in `changes-requested` or mention it in the review body instead of pretending the PR is clean. If a prior `REQUEST_CHANGES` review from `graycyrus` exists and all of its requested changes are addressed, post the new review as `COMMENT` with a body that explicitly says the previous requested changes are addressed. GitHub does not let you "dismiss" your own earlier review via the PR review API; a clean follow-up review is the closing signal.
+Only reply to or resolve threads that you have verified against the current code and that are actionable by the `M3gA-Mind` reviewer account. Do not resolve CodeRabbit/bot threads or other human reviewers' threads. Still evaluate those comments for deduplication and risk: if another reviewer raised a still-open blocker, keep the PR in `changes-requested` or mention it in the review body instead of pretending the PR is clean. If a prior `REQUEST_CHANGES` review from `M3gA-Mind` exists and all of its requested changes are addressed, post the new review as `COMMENT` with a body that explicitly says the previous requested changes are addressed. GitHub does not let you "dismiss" your own earlier review via the PR review API; a clean follow-up review is the closing signal.
 
 If the author made a generic comment without addressing specifics, inspect the code anyway. If the code change fixed the concern, resolve it with a code-based explanation. If not, leave the thread unresolved and carry the issue into the new review.
 
@@ -203,7 +203,7 @@ EOF
 ### Don't post if
 - The PR is perfect — just note "LGTM, no issues found" in the tracking file (no GitHub comment needed)
 - All findings are duplicates of CodeRabbit — note "CodeRabbit already covered everything" in the tracking file
-- This is a continuation where previous `graycyrus` requested changes are now resolved and no new critical/major findings remain — post a `COMMENT` review noting the previous requested changes are addressed, then move the tracking file to `to-be-approved/`
+- This is a continuation where previous `M3gA-Mind` requested changes are now resolved and no new critical/major findings remain — post a `COMMENT` review noting the previous requested changes are addressed, then move the tracking file to `to-be-approved/`
 
 ### Confirm
 After posting, note:
@@ -217,7 +217,7 @@ Posted review on PR #__PR_NUMBER__:
 
 ## STEP 12: Update tracking file
 
-Write the tracking file to `/Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/PR-__PR_NUMBER__.md`:
+Write the tracking file to `/Users/megamind/tinyhuman/automation-review-pr/tinyhumansai-openhuman/PR-__PR_NUMBER__.md`:
 
 ```markdown
 # PR #__PR_NUMBER__ — <title>
@@ -257,9 +257,9 @@ Write the tracking file to `/Users/cyrus/Desktop/automation/review-pr/tinyhumans
 For **continuation reviews**, append a new "Review <n>" section — don't overwrite prior reviews.
 
 ### Status logic
-- Zero critical/major issues and all prior `graycyrus` requested changes resolved → status `clean` → **move file** to `/Users/cyrus/Desktop/automation/review-pr/to-be-approved/PR-__PR_NUMBER__.md`
+- Zero critical/major issues and all prior `M3gA-Mind` requested changes resolved → status `clean` → **move file** to `/Users/megamind/tinyhuman/automation-review-pr/to-be-approved/PR-__PR_NUMBER__.md`
 - Any critical/major issues → status `changes-requested` → keep in `tinyhumansai-openhuman/`
-- Any prior unresolved `graycyrus` requested changes that still remain → status `changes-requested` → keep in `tinyhumansai-openhuman/`
+- Any prior unresolved `M3gA-Mind` requested changes that still remain → status `changes-requested` → keep in `tinyhumansai-openhuman/`
 - BLOCKED (mismatch) → status `blocked` → keep in `tinyhumansai-openhuman/`
 
 ---
@@ -267,7 +267,7 @@ For **continuation reviews**, append a new "Review <n>" section — don't overwr
 ## STEP 13: Clean up context file
 
 ```bash
-rm /Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/.context-PR-__PR_NUMBER__.md
+rm /Users/megamind/tinyhuman/automation-review-pr/tinyhumansai-openhuman/.context-PR-__PR_NUMBER__.md
 ```
 
 ---

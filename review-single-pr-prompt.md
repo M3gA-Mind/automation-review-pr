@@ -2,18 +2,18 @@
 
 You are reviewing a single PR. Post your review to GitHub and track it locally.
 
-**Reviewer identity**: You post reviews as `graycyrus` (Cyrus Grey).
+**Reviewer identity**: You post reviews as `M3gA-Mind` (M3gA-Mind).
 
 ---
 
 ## TRACKING SYSTEM
 
-All review state is tracked in `/Users/cyrus/Desktop/automation/review-pr/`.
+All review state is tracked in `/Users/megamind/tinyhuman/automation-review-pr/`.
 
 ### Directory structure
 
 ```
-/Users/cyrus/Desktop/automation/review-pr/
+/Users/megamind/tinyhuman/automation-review-pr/
 ├── tinyhumansai-openhuman/        # per-PR tracking files
 │   └── PR-<N>.md
 ├── to-be-approved/                # clean PRs ready for manual approval
@@ -41,7 +41,7 @@ All review state is tracked in `/Users/cyrus/Desktop/automation/review-pr/`.
 **Gates**: CI <pass/fail> | Conflicts <pass/fail> | Unresolved feedback <pass/fail>
 **Areas changed**: <Rust core, Frontend, Tauri shell, etc.>
 **CodeRabbit dedup**: <what was skipped>
-**Resolution actions**: <all prior feedback evaluated; graycyrus thread replies/resolutions posted; other reviewer/bot threads left alone; prior requests still open; or "None">
+**Resolution actions**: <all prior feedback evaluated; M3gA-Mind thread replies/resolutions posted; other reviewer/bot threads left alone; prior requests still open; or "None">
 **Findings**:
 - [critical] <file:line> — <description>
 - [major] <file:line> — <description>
@@ -54,7 +54,7 @@ All review state is tracked in `/Users/cyrus/Desktop/automation/review-pr/`.
 
 ## STEP 1: Determine review type
 
-Check if tracking file exists at `/Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/PR-__PR_NUMBER__.md`:
+Check if tracking file exists at `/Users/megamind/tinyhuman/automation-review-pr/tinyhumansai-openhuman/PR-__PR_NUMBER__.md`:
 
 - **File does not exist** → **Fresh review** (full workflow from scratch)
 - **File exists** → **Continuation review** (read file for context, check what's new since last review)
@@ -101,7 +101,7 @@ query($owner:String!, $repo:String!, $number:Int!) {
 }' -F owner=tinyhumansai -F repo=openhuman -F number=__PR_NUMBER__
 ```
 
-For each unresolved thread/comment from any reviewer or bot, inspect the current code and any author replies. Evaluate whether it is fixed, still open, superseded, or only resolved by explanation. If a fixed thread is actionable by the `graycyrus` reviewer account, reply to the original review comment and resolve that thread:
+For each unresolved thread/comment from any reviewer or bot, inspect the current code and any author replies. Evaluate whether it is fixed, still open, superseded, or only resolved by explanation. If a fixed thread is actionable by the `M3gA-Mind` reviewer account, reply to the original review comment and resolve that thread:
 ```bash
 gh api repos/tinyhumansai/openhuman/pulls/comments/<comment_database_id>/replies \
   -X POST \
@@ -110,7 +110,7 @@ gh api repos/tinyhumansai/openhuman/pulls/comments/<comment_database_id>/replies
 gh api graphql -f query='mutation($threadId:ID!) { resolveReviewThread(input:{threadId:$threadId}) { thread { id isResolved } } }' -F threadId=<thread_id>
 ```
 
-Do not resolve CodeRabbit/bot threads or other human reviewers' threads. Still use all comments for deduplication and risk assessment: if another reviewer raised a still-open blocker, do not treat the PR as clean. If a prior `REQUEST_CHANGES` review from `graycyrus` exists and every requested change is now addressed, post the new review as `COMMENT` saying the previous requested changes are addressed. Log all evaluated/reply/resolve/left-open decisions in `**Resolution actions**:`.
+Do not resolve CodeRabbit/bot threads or other human reviewers' threads. Still use all comments for deduplication and risk assessment: if another reviewer raised a still-open blocker, do not treat the PR as clean. If a prior `REQUEST_CHANGES` review from `M3gA-Mind` exists and every requested change is now addressed, post the new review as `COMMENT` saying the previous requested changes are addressed. Log all evaluated/reply/resolve/left-open decisions in `**Resolution actions**:`.
 
 ## STEP 2: Read PR description + linked issues
 
@@ -263,10 +263,10 @@ EOF
 
 ### Step 9: Update tracking file
 
-After reviewing, create or update the tracking file at `/Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/PR-__PR_NUMBER__.md` with all review details. Each review cycle must include a `**Summary**:` field covering what files changed, what the PR does, and the key modifications, plus a `**Resolution actions**:` field covering all prior feedback evaluated and smart re-review replies/resolutions or "None".
+After reviewing, create or update the tracking file at `/Users/megamind/tinyhuman/automation-review-pr/tinyhumansai-openhuman/PR-__PR_NUMBER__.md` with all review details. Each review cycle must include a `**Summary**:` field covering what files changed, what the PR does, and the key modifications, plus a `**Resolution actions**:` field covering all prior feedback evaluated and smart re-review replies/resolutions or "None".
 
 Set status:
-- **If zero critical/major issues found** → status `clean`, **move file** to `/Users/cyrus/Desktop/automation/review-pr/to-be-approved/PR-__PR_NUMBER__.md`
+- **If zero critical/major issues found** → status `clean`, **move file** to `/Users/megamind/tinyhuman/automation-review-pr/to-be-approved/PR-__PR_NUMBER__.md`
 - **If issues found** → status `changes-requested`, keep in `tinyhumansai-openhuman/`
 
 ### Step 10: Print summary

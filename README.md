@@ -13,7 +13,7 @@ Cron (hourly)
        -> PR-<N>.md         Track findings, status, review history locally
 ```
 
-Reviews are posted as `graycyrus` (Cyrus Grey). Clean PRs (zero critical/major findings) are moved to `to-be-approved/` for manual approval. PRs are never auto-approved or merged.
+Reviews are posted as `M3gA-Mind` (M3gA-Mind). Clean PRs (zero critical/major findings) are moved to `to-be-approved/` for manual approval. PRs are never auto-approved or merged.
 
 ## Dashboard
 
@@ -75,7 +75,7 @@ Hourly cron job. Discovers eligible PRs, reviews them in parallel, commits and p
 
 ```bash
 # Crontab entry
-0 * * * * /Users/cyrus/Desktop/automation/review-pr/cron-pr-review.sh
+0 * * * * /Users/megamind/tinyhuman/automation-review-pr/cron-pr-review.sh
 ```
 
 ### `review-single.sh`

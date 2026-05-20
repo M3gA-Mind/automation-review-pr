@@ -1,12 +1,12 @@
 #!/bin/bash
 # Automated PR Reviewer — discovers eligible PRs, reviews them via review-single.sh
-# Cron: 0 * * * * /Users/cyrus/Desktop/automation/review-pr/cron-pr-review.sh
+# Cron: 0 * * * * /Users/megamind/tinyhuman/automation-review-pr/cron-pr-review.sh
 
 set -euo pipefail
 
 # Paths
-SCRIPT_DIR="/Users/cyrus/Desktop/automation/review-pr"
-REPO_DIR="/Users/cyrus/Desktop/Code/tinyhuman/openhuman.ai/openhuman"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="/Users/megamind/tinyhuman/openhuman-worker-1"
 LOG_DIR="${SCRIPT_DIR}/logs"
 DISCOVER_PROMPT="${SCRIPT_DIR}/discover-prompt.md"
 TIMESTAMP=$(date +"%Y-%m-%d-%H%M")
@@ -14,8 +14,8 @@ LOG_FILE="${LOG_DIR}/review-${TIMESTAMP}.log"
 CRON_START=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Ensure PATH includes required tools (cron has minimal PATH)
-export PATH="/Users/cyrus/.nvm/versions/node/v22.22.1/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
-export HOME="/Users/cyrus"
+export PATH="/opt/homebrew/bin:/Users/megamind/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
+export HOME="/Users/megamind"
 export CRON_MODE=1
 
 mkdir -p "${LOG_DIR}"

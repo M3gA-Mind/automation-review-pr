@@ -28,7 +28,7 @@ Use `line` (not `position`) with `side: "RIGHT"`. Line must be within a diff hun
 ### Don't post if
 - PR is perfect — note "LGTM" in tracking only
 - All findings duplicate CodeRabbit — note in tracking only
-- Continuation where prior `graycyrus` changes resolved + no new critical/major — post `COMMENT` noting changes addressed, move to `to-be-approved/`
+- Continuation where prior `M3gA-Mind` changes resolved + no new critical/major — post `COMMENT` noting changes addressed, move to `to-be-approved/`
 
 ### Tone
 Natural, specific, not robotic. "This will crash when X is null" not "consider handling edge cases." Give credit where due.

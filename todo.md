@@ -50,7 +50,7 @@
 
 - [ ] Parameterise all hardcoded values (repo name, org, reviewer identity, paths, port)
   - Move to a single `config.json` or `.env` file at the root
-  - `REPO` (`tinyhumansai/openhuman`), `ORG` (`tinyhumansai`), `REVIEWER` (`graycyrus`)
+  - `REPO` (`tinyhumansai/openhuman`), `ORG` (`tinyhumansai`), `REVIEWER` (`M3gA-Mind`)
   - `SCRIPT_DIR`, `REPO_DIR` in bash scripts → read from env/config
   - Dashboard `PORT` (already env-based)
 - [ ] Remove all hardcoded absolute paths (`/Users/cyrus/...`) from bash scripts and prompts

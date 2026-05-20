@@ -11,7 +11,7 @@ const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes — keeps mergeable/CI/revi
 
 // Hardcoded org members — update manually when team changes
 const ORG_MEMBERS = new Set([
-  'al629176', 'codeghost21', 'giri-aayush', 'graycyrus',
+  'al629176', 'codeghost21', 'giri-aayush', 'M3gA-Mind',
   'm3ga-mind', 'oxoxdev', 'sanil-23', 'senamakel', 'yellowsnnowmann',
 ]);
 

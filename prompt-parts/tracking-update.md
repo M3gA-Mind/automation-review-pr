@@ -1,6 +1,6 @@
 ## Update Tracking File
 
-Write to `/Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/PR-__PR_NUMBER__.md`:
+Write to `/Users/megamind/tinyhuman/automation-review-pr/tinyhumansai-openhuman/PR-__PR_NUMBER__.md`:
 
 ```markdown
 # PR #__PR_NUMBER__ — <title>
@@ -40,9 +40,9 @@ Write to `/Users/cyrus/Desktop/automation/review-pr/tinyhumansai-openhuman/PR-__
 For continuation reviews, **append** a new "Review <n>" section — don't overwrite.
 
 ### Status logic
-- 0 critical/major + all prior `graycyrus` changes resolved → `clean` → **move** to `/Users/cyrus/Desktop/automation/review-pr/to-be-approved/PR-__PR_NUMBER__.md`
+- 0 critical/major + all prior `M3gA-Mind` changes resolved → `clean` → **move** to `/Users/megamind/tinyhuman/automation-review-pr/to-be-approved/PR-__PR_NUMBER__.md`
 - Any critical/major → `changes-requested` → keep in `tinyhumansai-openhuman/`
 - BLOCKED (mismatch) → `blocked` → keep in `tinyhumansai-openhuman/`
-- Low-value/junk PR → `to-be-closed` → **move** to `/Users/cyrus/Desktop/automation/review-pr/to-be-closed/PR-__PR_NUMBER__.md`
+- Low-value/junk PR → `to-be-closed` → **move** to `/Users/megamind/tinyhuman/automation-review-pr/to-be-closed/PR-__PR_NUMBER__.md`
 
 ---

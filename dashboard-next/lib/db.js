@@ -54,7 +54,7 @@ function getDb() {
       coderabbit_dedup TEXT,
       resolution_actions TEXT,
       log_file_path TEXT,
-      reviewer TEXT DEFAULT 'graycyrus',
+      reviewer TEXT DEFAULT 'M3gA-Mind',
       updated_at TEXT DEFAULT (datetime('now'))
     );
 

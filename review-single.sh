@@ -10,12 +10,12 @@ if [ -z "${1:-}" ]; then
 fi
 
 PR="$1"
-SCRIPT_DIR="/Users/cyrus/Desktop/automation/review-pr"
-REPO_DIR="/Users/cyrus/Desktop/Code/tinyhuman/openhuman.ai/openhuman"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="/Users/megamind/tinyhuman/openhuman-worker-1"
 PARTS_DIR="${SCRIPT_DIR}/prompt-parts"
 STATUS_FILE="${SCRIPT_DIR}/status.json"
 
-export PATH="/Users/cyrus/.nvm/versions/node/v22.22.1/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
+export PATH="/opt/homebrew/bin:/Users/megamind/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
 
 REVIEW_START=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 START_EPOCH=$(date +%s)
