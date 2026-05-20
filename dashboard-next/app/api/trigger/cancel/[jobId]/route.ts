@@ -12,6 +12,15 @@ export async function POST(_req: Request, { params }: { params: Promise<{ jobId:
   const { jobId } = await params;
   const job = triggerJobs.activeJobs.get(jobId);
 
+  // Fix jobs share an existing openhuman-* pane — Ctrl-C the process rather
+  // than killing the pane.
+  const fixMatch = /^fix-(\d+)$/.exec(jobId);
+  if (fixMatch) {
+    const prId = parseInt(fixMatch[1], 10);
+    tmux.killFix(prId);
+    return NextResponse.json({ message: `Sent Ctrl-C to fix-${prId} pane`, jobId });
+  }
+
   // Reviews now run in tmux, not via spawn-tracked jobs. If this is a review
   // cancel, kill the tmux window for that PR regardless of whether we have
   // an in-memory job record.

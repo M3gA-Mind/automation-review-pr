@@ -43,7 +43,39 @@ export const api = {
     ),
   // Mutations
   triggerReview: (id: number) => jpost<{ jobId: string; message: string }>(`/api/trigger/review/${id}`),
-  triggerFix: (id: number) => jpost<{ pr: number; window: string; workspace: string; message: string }>(`/api/trigger/fix/${id}`),
+  triggerFix: async (id: number, paneId?: string) => {
+    const res = await fetch(`/api/trigger/fix/${id}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify(paneId ? { pane_id: paneId } : {}),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || `${res.status}`);
+    }
+    return res.json() as Promise<{
+      pr: number;
+      session: string;
+      window: string;
+      pane_id: string;
+      workspace: string;
+      attach: string;
+      logFile: string;
+      message: string;
+    }>;
+  },
+  fixStatus: (id: number, lines = 400) =>
+    jget<{
+      running: boolean;
+      mapping: { pane_id: string; window: string; workspace: string; logFile: string; started_at: string } | null;
+      content: string | null;
+    }>(`/api/trigger/fix/${id}?lines=${lines}`),
+  listPanes: () =>
+    jget<{
+      session: string | null;
+      panes: Array<{ pane_id: string; window: string; command: string; cwd: string; workspace: string; idle: boolean }>;
+    }>('/api/trigger/panes'),
   triggerDiscover: () => jpost<{ jobId: string }>('/api/trigger/discover'),
   cancelJob: (jobId: string) => jpost<{ message: string }>(`/api/trigger/cancel/${encodeURIComponent(jobId)}`),
   approve: (id: number) => jpost<{ success: boolean; review_url?: string }>(`/api/trigger/approve/${id}`),

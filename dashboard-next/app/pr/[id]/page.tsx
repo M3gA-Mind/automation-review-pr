@@ -10,6 +10,7 @@ import { ChecksTable } from '@/components/ChecksTable';
 import { CyclesTimeline } from '@/components/CyclesTimeline';
 import { TrackingFile } from '@/components/TrackingFile';
 import { Section } from '@/components/Section';
+import { FixTerminal } from '@/components/FixTerminal';
 
 export default function PrDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -57,6 +58,8 @@ export default function PrDetailPage({ params }: { params: Promise<{ id: string 
           <Section title="Actions">
             <PrActions pr={pr} onAction={load} />
           </Section>
+
+          <FixTerminal prId={prId} />
 
           <GithubDescription prId={prId} />
           <ChecksTable prId={prId} />

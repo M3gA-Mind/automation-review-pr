@@ -1,16 +1,42 @@
 'use client';
 import { useState } from 'react';
 import { Button } from './Button';
+import { Toast } from './Toast';
+import { PaneChooser } from './PaneChooser';
 import { api } from '@/lib/api';
 import type { Pr } from '@/lib/types';
 
+type ToastMsg = { tone: 'info' | 'success' | 'error'; message: string };
+
 export function PrActions({ pr, onAction }: { pr: Pr; onAction: () => void }) {
   const [busy, setBusy] = useState<string | null>(null);
-  const run = async (key: string, fn: () => Promise<unknown>) => {
+  const [toast, setToast] = useState<ToastMsg | null>(null);
+  const [chooserOpen, setChooserOpen] = useState(false);
+
+  const run = async (key: string, fn: () => Promise<unknown>, successMsg?: string) => {
     setBusy(key);
-    try { await fn(); onAction(); }
-    catch (e: any) { alert(e.message); }
-    finally { setBusy(null); }
+    try {
+      const result: any = await fn();
+      onAction();
+      if (successMsg) setToast({ tone: 'success', message: successMsg });
+      return result;
+    } catch (e: any) {
+      setToast({ tone: 'error', message: e.message });
+      throw e;
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const triggerFixWithPane = async (paneId: string | null) => {
+    const result: any = await run(
+      'fix',
+      () => api.triggerFix(pr.id, paneId ?? undefined),
+    );
+    setToast({
+      tone: 'success',
+      message: `Fix → ${result.workspace?.split('/').pop() ?? result.workspace} (${result.window} · ${result.pane_id})`,
+    });
   };
 
   return (
@@ -32,9 +58,9 @@ export function PrActions({ pr, onAction }: { pr: Pr; onAction: () => void }) {
       <Button
         size="sm"
         variant="purple"
-        onClick={() => run('fix', () => api.triggerFix(pr.id))}
+        onClick={() => setChooserOpen(true)}
         disabled={busy !== null || pr.is_fixing}
-        title={pr.is_fixing ? 'Fix already running — attach in tmux' : 'Run `pnpm review fix` in a tmux window'}
+        title={pr.is_fixing ? 'Fix already running — attach in tmux' : 'Run `pnpm review fix` in a tmux pane'}
       >
         {busy === 'fix' ? 'Starting…' : pr.is_fixing ? 'Fixing…' : 'Trigger Fix'}
       </Button>
@@ -59,6 +85,13 @@ export function PrActions({ pr, onAction }: { pr: Pr; onAction: () => void }) {
           {busy === 'merge' ? 'Merging…' : 'Merge'}
         </Button>
       )}
+
+      <PaneChooser
+        open={chooserOpen}
+        onClose={() => setChooserOpen(false)}
+        onPick={triggerFixWithPane}
+      />
+      {toast && <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} />}
     </div>
   );
 }

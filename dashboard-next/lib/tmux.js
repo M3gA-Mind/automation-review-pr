@@ -222,6 +222,66 @@ function getFixMapping(prId) {
 }
 
 /**
+ * Capture the visible content of a pane. `-S -<lines>` starts that many
+ * lines back from the bottom so we get scrollback context.
+ */
+function capturePane(paneId, opts = {}) {
+  const lines = Math.max(20, Math.min(2000, opts.lines || 400));
+  const raw = tryExec(`tmux capture-pane -p -t ${paneId} -S -${lines}`);
+  return raw ?? '';
+}
+
+/**
+ * List panes that are candidates for running a fix: foreground command is
+ * an idle shell and cwd points at an openhuman-N clone.
+ */
+function listIdleOpenhumanPanes() {
+  return listPanes().filter(
+    (p) => IDLE_SHELLS.has(p.command) && /\/openhuman-\d+(?:\/|$)/.test(p.cwd || ''),
+  );
+}
+
+/**
+ * Same as startFixInPane but accepts an explicit pane id. Falls back to
+ * the auto-picker when paneId is null/undefined.
+ */
+function startFixInSpecificPane(prId, logFile, paneId) {
+  if (!paneId) return startFixInPane(prId, logFile);
+  if (!isAvailable()) throw new Error('tmux is not installed on PATH');
+  ensureSession();
+  fs.mkdirSync(STATE_DIR, { recursive: true });
+  if (isFixRunning(prId)) throw new Error(`Fix for PR #${prId} is already running`);
+
+  const pane = listPanes().find((p) => p.pane_id === paneId);
+  if (!pane) throw new Error(`Pane ${paneId} not found`);
+  if (!IDLE_SHELLS.has(pane.command)) throw new Error(`Pane ${paneId} is busy (${pane.command})`);
+
+  try { fs.unlinkSync(fixMarkerPath(prId)); } catch {}
+  const marker = fixMarkerPath(prId);
+  const cmd = `pnpm review fix ${Number(prId)} ; echo $? > ${quote(marker)}`;
+  exec(`tmux send-keys -t ${pane.pane_id} ${quote(cmd)} C-m`);
+  tryExec(`tmux pipe-pane -o -t ${pane.pane_id} ${quote(`cat >> ${logFile}`)}`);
+
+  const mapping = {
+    pane_id: pane.pane_id,
+    window: pane.window,
+    workspace: pane.cwd,
+    logFile,
+    started_at: new Date().toISOString(),
+  };
+  fs.writeFileSync(fixMappingPath(prId), JSON.stringify(mapping, null, 2));
+  return {
+    session: SESSION,
+    window: pane.window,
+    pane_id: pane.pane_id,
+    workspace: pane.cwd,
+    logFile,
+    marker,
+    attach: `tmux attach -t ${SESSION} \\; select-window -t ${pane.window}`,
+  };
+}
+
+/**
  * Legacy: spawn `pnpm review fix` in its own new window. Kept around but
  * unused — the pane-targeting flow is the default.
  */
@@ -296,6 +356,7 @@ module.exports = {
   startReview,
   startFix,
   startFixInPane,
+  startFixInSpecificPane,
   killWindow,
   killFix,
   hasWindow,
@@ -307,4 +368,6 @@ module.exports = {
   listWindows,
   listPanes,
   pickIdlePane,
+  listIdleOpenhumanPanes,
+  capturePane,
 };
