@@ -39,6 +39,26 @@ export function PrActions({ pr, onAction }: { pr: Pr; onAction: () => void }) {
     });
   };
 
+  // After any successful merge, post a personalized thank-you comment.
+  // First-time contributors get a Discord invite via the welcome route.
+  // Best-effort — the merge already succeeded, so we surface the result
+  // through the toast but never throw back up.
+  const postWelcome = async () => {
+    const r = await api.welcome(pr.id);
+    if (r.posted) {
+      setToast({
+        tone: 'success',
+        message: r.first_contribution
+          ? `Posted welcome + Discord invite to first-time contributor`
+          : `Posted thank-you to returning contributor`,
+      });
+    } else if (r.skipped === 'team_member') {
+      setToast({ tone: 'info', message: `Welcome comment skipped: @${r.contributor} is on the team` });
+    } else if (r.error) {
+      setToast({ tone: 'info', message: `Merge done. Welcome comment skipped: ${r.error.slice(0, 200)}` });
+    }
+  };
+
   return (
     <div className="flex flex-wrap gap-2">
       <Button size="sm" onClick={() => run('sync', () => api.syncPr(pr.id))} disabled={busy !== null}>
@@ -81,9 +101,10 @@ export function PrActions({ pr, onAction }: { pr: Pr; onAction: () => void }) {
         <Button
           size="sm"
           variant="purple"
-          onClick={() => {
+          onClick={async () => {
             if (!confirm(`Merge PR #${pr.id}? (squash + delete branch)`)) return;
-            run('merge', () => api.merge(pr.id), `Merged #${pr.id}`);
+            await run('merge', () => api.merge(pr.id), `Merged #${pr.id}`);
+            await postWelcome();
           }}
           disabled={busy !== null}
         >
@@ -101,6 +122,7 @@ export function PrActions({ pr, onAction }: { pr: Pr; onAction: () => void }) {
               await api.approve(pr.id);
               return api.merge(pr.id);
             }, `Approved + merged #${pr.id}`);
+            await postWelcome();
           }}
           disabled={busy !== null}
           title="Post an approving review and then squash-merge"
@@ -113,11 +135,12 @@ export function PrActions({ pr, onAction }: { pr: Pr; onAction: () => void }) {
         <Button
           size="sm"
           variant="red"
-          onClick={() => {
+          onClick={async () => {
             if (!confirm(
               `Force-merge PR #${pr.id}? This bypasses branch protection and failing checks via \`gh pr merge --admin\`. Requires admin rights on the repo.`,
             )) return;
-            run('forceMerge', () => api.merge(pr.id, { force: true }), `Force-merged #${pr.id}`);
+            await run('forceMerge', () => api.merge(pr.id, { force: true }), `Force-merged #${pr.id}`);
+            await postWelcome();
           }}
           disabled={busy !== null}
           title="gh pr merge --squash --admin --delete-branch"

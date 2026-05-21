@@ -32,7 +32,10 @@ export const api = {
     return jget<Pr[]>(`/api/prs${qs ? `?${qs}` : ''}`);
   },
   pr: (id: number) => jget<Pr>(`/api/prs/${id}`),
-  prChecks: (id: number) => jget<{ checks: CiCheck[]; total: number; pass: number; fail: number; pending: number }>(`/api/prs/${id}/checks`),
+  prChecks: (id: number, refresh = false) =>
+    jget<{ checks: CiCheck[]; total: number; pass: number; fail: number; pending: number; refreshed?: boolean }>(
+      `/api/prs/${id}/checks${refresh ? '?refresh=1' : ''}`,
+    ),
   prTrackingHtml: async (id: number): Promise<string | null> => {
     const r = await fetch(`/api/prs/${id}/tracking/html`);
     return r.ok ? r.text() : null;
@@ -111,6 +114,17 @@ export const api = {
   },
   syncPr: (id: number) => jpost<Pr>(`/api/prs/${id}/sync`),
   syncAll: () => jpost<{ synced: number }>('/api/sync'),
+  // Best-effort post-merge welcome. Errors here shouldn't bubble up — the
+  // merge has already succeeded by the time we call this.
+  welcome: async (id: number) => {
+    try {
+      return await jpost<{ posted: boolean; first_contribution?: boolean; comment?: string; error?: string; skipped?: string; contributor?: string }>(
+        `/api/trigger/welcome/${id}`,
+      );
+    } catch (e: any) {
+      return { posted: false, error: e.message };
+    }
+  },
 };
 
 // Public GitHub API — direct from browser (repo is public).
