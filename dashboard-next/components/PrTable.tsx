@@ -24,9 +24,9 @@ function AssigneeChips({ assignees, me }: { assignees?: string; me: string | nul
     <span className="flex flex-wrap gap-1">
       {list.map((name) =>
         meLower && name.toLowerCase() === meLower ? (
-          <Badge key={name} tone="blue" title={`Assigned to ${name} (you)`}>you</Badge>
+          <Badge key={name} tone="blue"><span title={`Assigned to ${name} (you)`}>you</span></Badge>
         ) : (
-          <Badge key={name} tone="gray" title={`Assigned to ${name}`}>{name}</Badge>
+          <Badge key={name} tone="gray"><span title={`Assigned to ${name}`}>{name}</span></Badge>
         ),
       )}
     </span>
