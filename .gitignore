@@ -3,6 +3,7 @@ node_modules/
 
 # OS
 .DS_Store
+docs
 
 # Runtime logs + state
 logs/
